@@ -29,7 +29,7 @@ class PizzaSlice
 public:
     float start_angle, end_angle;
     CircularSector inner_slice, outward_slice;
-    std::vector<Shape*> toppings;
+    std::vector<std::pair<Shape*, Color*>> toppings;
 
     PizzaSlice(const float& in_start_angle, const float& in_end_angle, const float& radius_inner, const float& radius_outward):
         start_angle(in_start_angle), end_angle(in_end_angle),
@@ -38,10 +38,18 @@ public:
         toppings()
     {}
 
+    void add_toppings(int n_toppings)
+    {
+        
+    }
+
     ~PizzaSlice()
     {
         for (auto &s: toppings)
-            delete s;
+        {
+            delete s.first;
+            delete s.second;
+        }
 
         toppings.clear();
     }
@@ -56,7 +64,9 @@ public:
 
     Pizza(unsigned int in_slices):
         n_slices(in_slices), slices(), vertices(), info(),
-        outward_color(157, 90, 18, true), inner_color(231, 175, 70, true)
+        outward_color(157, 90, 18, true),
+        inner_color(231, 175, 70, true),
+        pepperoni_color(108, 1, 1, true)
     {
         float step = 360.0 / float(n_slices);
         for (int c = 0; c < n_slices; c++)
@@ -132,7 +142,7 @@ public:
 private:
     unsigned int n_slices;
     std::vector<PizzaSlice> slices;
-    Color outward_color, inner_color;
+    Color outward_color, inner_color, pepperoni_color;
 };
 
 #endif
