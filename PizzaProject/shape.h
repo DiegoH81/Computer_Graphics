@@ -52,7 +52,7 @@ private:
 
         for (int i = 0; i <= n_points; i++)
         {
-            float ang = utils::sexagesimal_to_radian(i * step);
+            float ang = utils::ang_to_rad(i * step);
             float x = c_x + radius * std::cos(ang);
             float y = c_y + radius * std::sin(ang);
             
@@ -89,7 +89,7 @@ private:
 
         for (int i = 0; i <= n_points; i++)
         {
-            float ang = utils::sexagesimal_to_radian(start_angle+ (i * step));
+            float ang = utils::ang_to_rad(start_angle+ (i * step));
             float x = c_x + radius * std::cos(ang);
             float y = c_y + radius * std::sin(ang);
             
@@ -103,6 +103,7 @@ class Rectangle : public Shape
 public:
     Rectangle(const float& in_height, // Proportion width over length
               const float& in_width,
+              const float& in_angle = 0.0f,
               const float& in_cx = 0.0f,
               const float& in_cy = 0.0f):
         Shape(in_cx, in_cy)
@@ -110,10 +111,24 @@ public:
         float x_mid = in_width / 2.0f;
         float y_mid = in_height / 2.0f;
 
-        vertices.push_back(in_cx - x_mid); vertices.push_back(in_cy + y_mid); vertices.push_back(0.0f);
-        vertices.push_back(in_cx + x_mid); vertices.push_back(in_cy + y_mid); vertices.push_back(0.0f);
-        vertices.push_back(in_cx + x_mid); vertices.push_back(in_cy - y_mid); vertices.push_back(0.0f);
-        vertices.push_back(in_cx - x_mid); vertices.push_back(in_cy - y_mid); vertices.push_back(0.0f);
+
+        std::vector<float> l_x = {-x_mid, x_mid, x_mid, -x_mid};
+        std::vector<float> l_y = {y_mid, y_mid, -y_mid, -y_mid};
+        
+        float ang = utils::ang_to_rad(in_angle);
+        float cos_a = std::cos(ang);
+        float sin_a = std::sin(ang);
+
+        for (int i = 0; i < 4; i++)
+        {
+            auto &x = l_x[i];
+            auto &y = l_y[i];
+
+            float rot_x = x * cos_a - y * sin_a;
+            float rot_y = x * sin_a + y * cos_a;
+
+            vertices.push_back(rot_x + in_cx); vertices.push_back(rot_y + in_cy); vertices.push_back(0.0f);
+        }
     }
 };
 

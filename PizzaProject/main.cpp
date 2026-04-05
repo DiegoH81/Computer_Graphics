@@ -15,9 +15,11 @@
 
 #define PI 3.14159265359
 
-float bgR = 0.2f, bgG = 0.3f, bgB = 0.3f;
+float bgR = 0.0f, bgG = 0.0f, bgB = 0.0f;
 bool is_moving = false;
-unsigned int slice_id = 0;
+int slice_id = 0;
+unsigned int n_slices = 0;
+
 float offset = 0.1f;
 
 const char *vertexShaderSource = "#version 330 core\n"
@@ -39,13 +41,6 @@ const char *fragmentShader = "#version 330 core\n"
 						   								   
 
 
-void get_slice()
-{
-    std::cout << "ENTER SLICE id TO MOVE: ";
-    std::cin >> slice_id;
-    is_moving = true;
-}
-
 
 void frame_buffer_size_call_back(GLFWwindow* in_window, int in_w, int in_h)
 {
@@ -61,36 +56,35 @@ void key_call_back(GLFWwindow* in_window, int key, int scan_code, int action, in
         std::cout << "CHAU WEIS\n";
         glfwSetWindowShouldClose(in_window, true);
     }
-    else if ( key == GLFW_KEY_Y && action == GLFW_PRESS)
+    else if ( key == GLFW_KEY_0 && action == GLFW_PRESS)
     {
-        bgR = 1.0f;
-        bgG = 1.0f;
-        bgB = 0.0f;
+        bgR = 0.2f; bgG = 0.3f; bgB = 0.3f;
     }
     else if ( key == GLFW_KEY_R && action == GLFW_PRESS)
     {
-        bgR = 1.0f;
-        bgG = 0.0f;
-        bgB = 0.0f;
+        bgR = 1.0f; bgG = 0.0f; bgB = 0.0f;
     }
     else if ( key == GLFW_KEY_G && action == GLFW_PRESS)
     {
-        bgR = 0.0f;
-        bgG = 1.0f;
-        bgB = 0.0f;
+        bgR = 0.0f; bgG = 1.0f; bgB = 0.0f;
     }
     else if ( key == GLFW_KEY_B && action == GLFW_PRESS)
     {
-        bgR = 0.0f;
-        bgG = 0.0f;
-        bgB = 1.0f;
+        bgR = 0.0f; bgG = 0.0f; bgB = 1.0f;
     }
-    else if( key == GLFW_KEY_O && action == GLFW_PRESS)
+    else if ( key == GLFW_KEY_LEFT && (action == GLFW_PRESS || action == GLFW_REPEAT) )
     {
-        if (is_moving == false)
-            std::thread(get_slice).detach();
+        slice_id  = (slice_id + 1) % n_slices;
+        std::cout << "Moving slice " << slice_id << "\n";
     }
-    else if( key == GLFW_KEY_P && action == GLFW_PRESS)
+    else if ( key == GLFW_KEY_RIGHT && (action == GLFW_PRESS || action == GLFW_REPEAT) )
+    {
+        slice_id --;
+        if (slice_id < 0)
+            slice_id = n_slices - 1;
+        std::cout << "Moving slice " << slice_id << "\n";
+    }
+    else if ( key == GLFW_KEY_P && action == GLFW_PRESS)
         is_moving = false;
     else if ( key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT) )
         pizzaPtr->move_slice(slice_id, -offset, 0.0f);
@@ -99,7 +93,7 @@ void key_call_back(GLFWwindow* in_window, int key, int scan_code, int action, in
     else if ( key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT) )
         pizzaPtr->move_slice(slice_id, 0.0f, +offset);
     else if ( key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT) )
-        pizzaPtr->move_slice(slice_id, offset, -offset);
+        pizzaPtr->move_slice(slice_id, 0.0f, -offset);
 }
 
 int main()
@@ -163,10 +157,11 @@ int main()
     glBindVertexArray(VAO);
     
 
-    int n_slices = 10;
+    n_slices = 10;
     Pizza my_pizza(n_slices);
     my_pizza.create_vertices();
 
+    std::cout << "Moving slice " << slice_id << "\n";
     glfwSetWindowUserPointer(window, &my_pizza);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
