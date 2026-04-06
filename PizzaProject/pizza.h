@@ -38,269 +38,45 @@ public:
         outward_slice(30, start_angle, end_angle, radius_outward),
         toppings(), radius(radius_inner)
     {
-        add_toppings(3, 20, 0.05f);
+        int pepperoni_count = 3;
+        int pineapple_count = 2;
+        int oregano_count = 30;
+        int oregano_red_count = 20;
+        int olive_count = 2;
+
+        add_toppings(pepperoni_count,
+                     pineapple_count,
+                     oregano_count,
+                     oregano_red_count,
+                     olive_count);
     }
 
-    void add_toppings(int n_toppings, int n_condiments, float pepperoni_radius)
+    void add_toppings(int pepperoni_count,
+                      int pineapple_count,
+                      int oregano_count,
+                      int oregano_red_count,
+                      int olive_count)
     {
         std::random_device rd;
         std::mt19937 gen(rd());
-
+        
+        shape_generate_valid_figures(pepperoni_count, "PEPPERONI",
+                                    [&]() {return create_circle(0.05f, gen); });
+            
+            
+        shape_generate_valid_figures(pineapple_count, "PINEAPPLE", 
+                                    [&]() {return create_rectangle(0.05f, 0.08f, gen); });
         
         
-        int pepperoni_count = 3;
-        int pineapple_count = 2;
-        int olive_count = 2;
+        shape_generate_valid_figures(oregano_count, "OREGANO",
+                                    [&]() {return create_rectangle(0.012f, 0.020f, gen); });
+                        
+        shape_generate_valid_figures(oregano_red_count, "OREGANO RED",
+                                    [&]() {return create_rectangle(0.012f, 0.020f, gen); });
         
         
-        int counter = 0;
-        while(counter < pepperoni_count)
-        {
-            bool valid_circle = false;
-            float x = 0.0f , y = 0.0f;
-            int attempts = 0;
-            do
-            {
-                valid_circle = true;
-                
-                std::uniform_real_distribution<> RAD(0.1f, radius - pepperoni_radius); 
-                //std::uniform_real_distribution<> ANG_R(start_angle + 1, end_angle - 1); 
-                std::uniform_real_distribution<> ANG_R(start_angle + 1, end_angle - 1); 
-                float ang_to_convert = ANG_R(gen);
-                float ang = utils::ang_to_rad(ang_to_convert);
-                float new_radius = RAD(gen);
-                x = new_radius * std::cos(ang);
-                y = new_radius * std::sin(ang);
-
-                auto temp_circle = Circle(40, pepperoni_radius, x, y);
-
-                auto v_temp = temp_circle.get_vertices();
-                int size = v_temp.size() / 3;
-
-                for (int i = 0; i < size; i++)
-                {
-                    auto &x = v_temp[3 * i];
-                    auto &y = v_temp[3 * i + 1];
-
-                    
-                    float ang = utils::rad_to_ang(std::atan2(y, x));
-
-                    if (!is_in_range(ang, start_angle, end_angle))
-                    {
-                        valid_circle = false;
-                        break;
-                    }
-                }
-
-                attempts++;
-            } while (!valid_circle && attempts < 100);
-
-            toppings.push_back({new Circle(40, pepperoni_radius, x, y), "PEPPERONI"});
-            counter++;
-        }
-        
-
-        counter = 0;
-        while(counter < pineapple_count)
-        {
-            std::uniform_real_distribution<> RAD(0.1f, radius - pepperoni_radius); 
-            std::uniform_real_distribution<> ANG_R(start_angle + 1.0f, end_angle - 1.0f); 
-            float ang_to_convert = ANG_R(gen);
-            float ang = utils::ang_to_rad(ang_to_convert);
-            
-
-            bool valid_rectangle = false;
-            float x = 0.0f;
-            float y = 0.0f;
-            float ang_to_rotate = 0.0f;
-            int attempts = 0;
-            do
-            {
-                
-                float new_radius = RAD(gen);
-                x = new_radius * std::cos(ang);
-                y = new_radius * std::sin(ang);
-
-                std::uniform_real_distribution<> ANG_MOV(0.0f, 360.0f); 
-                ang_to_rotate = ANG_MOV(gen);
-
-                Rectangle temp(0.05f, 0.08f, ang_to_rotate, x, y);
-                
-                valid_rectangle = true;
-                auto v_temp = temp.get_vertices();
-                for (int i = 0; i < 4; i++)
-                {
-                    auto &x = v_temp[3 * i];
-                    auto &y = v_temp[3 * i + 1];
-
-                    float d = std::sqrt(x*x + y*y);
-                    float ang = utils::rad_to_ang(std::atan2(y, x));
-                    
-                    if (d > radius || !is_in_range(ang, start_angle, end_angle))
-                    {
-                        valid_rectangle = false;
-                        break;
-                    }
-                }
-                attempts++;
-            } while (!valid_rectangle && attempts < 100);
-
-            toppings.push_back({new Rectangle(0.05f, 0.08f, ang_to_rotate, x, y), "PINEAPPLE"});
-            counter++;
-        }
-
-        counter = 0;
-        while(counter < n_condiments)
-        {
-            std::uniform_real_distribution<> RAD(0.1f, radius - pepperoni_radius); 
-            std::uniform_real_distribution<> ANG_R(start_angle + 1, end_angle - 1); 
-            float ang_to_convert = ANG_R(gen);
-            float ang = utils::ang_to_rad(ang_to_convert);
-            
-
-            bool valid_rectangle = false;
-            float x = 0.0f;
-            float y = 0.0f;
-            int attempts = 0;
-            
-            float ang_to_rotate = 0.0f;
-            do
-            {
-                
-                float new_radius = RAD(gen);
-                x = new_radius * std::cos(ang);
-                y = new_radius * std::sin(ang);
-
-                std::uniform_real_distribution<> ANG_MOV(0.0f, 360.0f); 
-                ang_to_rotate = ANG_MOV(gen);
-
-                Rectangle temp(0.012f, 0.020f, ang_to_rotate, x, y);
-                
-                valid_rectangle = true;
-                auto v_temp = temp.get_vertices();
-                for (int i = 0; i < 4; i++)
-                {
-                    auto &x = v_temp[3 * i];
-                    auto &y = v_temp[3 * i + 1];
-
-                    float d = std::sqrt(x*x + y*y);
-                    float ang = utils::rad_to_ang(std::atan2(y, x));
-                    
-                    if (d > radius || !is_in_range(ang, start_angle, end_angle))
-                    {
-                        valid_rectangle = false;
-                        break;
-                    }
-                }
-                attempts++;
-            } while (!valid_rectangle && attempts < 100);
-
-            toppings.push_back({new Rectangle(0.012f, 0.020f, ang_to_rotate, x, y), "OREGANO"});
-            counter++;
-        }
-
-        counter = 0;
-        while(counter < n_condiments)
-        {
-            std::uniform_real_distribution<> RAD(0.1f, radius - pepperoni_radius); 
-            std::uniform_real_distribution<> ANG_R(start_angle + 1, end_angle - 1); 
-            float ang_to_convert = ANG_R(gen);
-            float ang = utils::ang_to_rad(ang_to_convert);
-            
-
-            bool valid_rectangle = false;
-            float x = 0.0f;
-            float y = 0.0f;
-            int attempts = 0;
-            
-            float ang_to_rotate = 0.0f;
-            do
-            {
-                
-                float new_radius = RAD(gen);
-                x = new_radius * std::cos(ang);
-                y = new_radius * std::sin(ang);
-
-                std::uniform_real_distribution<> ANG_MOV(0.0f, 360.0f); 
-                ang_to_rotate = ANG_MOV(gen);
-
-                Rectangle temp(0.012f, 0.020f, ang_to_rotate, x, y);
-                
-                valid_rectangle = true;
-                auto v_temp = temp.get_vertices();
-                for (int i = 0; i < 4; i++)
-                {
-                    auto &x = v_temp[3 * i];
-                    auto &y = v_temp[3 * i + 1];
-
-                    float d = std::sqrt(x*x + y*y);
-                    float ang = utils::rad_to_ang(std::atan2(y, x));
-                    
-                    if (d > radius || !is_in_range(ang, start_angle, end_angle))
-                    {
-                        valid_rectangle = false;
-                        break;
-                    }
-                }
-                attempts++;
-            } while (!valid_rectangle && attempts < 100);
-
-            toppings.push_back({new Rectangle(0.012f, 0.020f, ang_to_rotate, x, y), "OREGANO RED"});
-            counter++;
-        }
-        
-
-        counter = 0;
-        while(counter < olive_count)
-        {
-            std::uniform_real_distribution<> RAD(0.1f, radius - pepperoni_radius); 
-            std::uniform_real_distribution<> ANG_R(start_angle + 1, end_angle - 1); 
-            float ang_to_convert = ANG_R(gen);
-            float ang = utils::ang_to_rad(ang_to_convert);
-            
-
-            bool valid_olive = false;
-            float x = 0.0f;
-            float y = 0.0f;
-            int attempts = 0;
-            
-            float ang_to_rotate = 0.0f;
-            do
-            {
-                
-                float new_radius = RAD(gen);
-                x = new_radius * std::cos(ang);
-                y = new_radius * std::sin(ang);
-
-                std::uniform_real_distribution<> ANG_MOV(0.0f, 360.0f); 
-                ang_to_rotate = ANG_MOV(gen);
-
-                Elipse temp(0.05f, 0.03f, ang_to_rotate, x, y);
-                
-                valid_olive = true;
-                auto v_temp = temp.get_vertices();
-                int size = v_temp.size() / 3;
-                for (int i = 0; i < size; i++)
-                {
-                    auto &x = v_temp[3 * i];
-                    auto &y = v_temp[3 * i + 1];
-
-                    float d = std::sqrt(x*x + y*y);
-                    float ang = utils::rad_to_ang(std::atan2(y, x));
-                    
-                    if (d > radius || !is_in_range(ang, start_angle, end_angle))
-                    {
-                        valid_olive = false;
-                        break;
-                    }
-                }
-                attempts++;
-            } while (!valid_olive && attempts < 100);
-
-            toppings.push_back({new Elipse(40, 0.05f, 0.03f, ang_to_rotate, x, y), "OLIVE"});
-            counter++;
-        }
-
+        shape_generate_valid_figures(olive_count, "OLIVE",
+                                    [&]() {return create_elipse(0.05f, 0.03f, gen); });    
     }
 
 private:
@@ -310,6 +86,105 @@ private:
             return true;
 
         return false;
+    }
+
+    bool validate(Shape *shape)
+    {
+        auto v_temp = shape->get_vertices();
+        int size = v_temp.size() / 3;
+        for (int i = 0; i < size; i++)
+        {
+            auto &x = v_temp[3 * i];
+            auto &y = v_temp[3 * i + 1];
+
+            float d = std::sqrt(x*x + y*y);
+            float ang = utils::rad_to_ang(std::atan2(y, x));
+            
+            if (d > radius || !is_in_range(ang, start_angle, end_angle))
+                return false;
+        }
+
+        return true;
+    }
+
+    template <typename CREATOR_FUNCTION>
+    void shape_generate_valid_figures(int limit, std::string name, CREATOR_FUNCTION function)
+    {
+        for (int i = 0; i < limit; i++)
+        {
+            int attempts = 0;
+            Shape* shape = nullptr;
+    
+            do
+            {
+                if (shape)
+                    delete shape;
+    
+                shape = function();
+                attempts++;
+            } while (!validate(shape) && attempts < 100);
+    
+            toppings.push_back({shape, name});
+        }
+    }
+
+    Circle* create_circle(float in_radius, std::mt19937& gen)
+    {
+        float x = 0.0f , y = 0.0f;
+           
+        std::uniform_real_distribution<> RAD(0.1f, radius - in_radius); 
+        std::uniform_real_distribution<> ANG_R(start_angle + 1.0f, end_angle - 1.0f);
+        
+        float ang_to_convert = ANG_R(gen);
+        float ang = utils::ang_to_rad(ang_to_convert);
+        float new_radius = RAD(gen);
+
+        x = new_radius * std::cos(ang);
+        y = new_radius * std::sin(ang);
+        
+        return new Circle(40, in_radius, x, y);
+    }
+
+    Rectangle* create_rectangle(float in_height, float in_width, std::mt19937& gen)
+    {
+        float x = 0.0f, y = 0.0f;
+
+        std::uniform_real_distribution<> RAD(0.1f, radius); 
+        std::uniform_real_distribution<> ANG_R(start_angle + 1.0f, end_angle - 1.0f); 
+
+        float ang_to_convert = ANG_R(gen);
+        float ang = utils::ang_to_rad(ang_to_convert);
+        float ang_to_rotate = 0.0f;
+        float new_radius = RAD(gen);
+
+        x = new_radius * std::cos(ang);
+        y = new_radius * std::sin(ang);
+
+        std::uniform_real_distribution<> ANG_MOV(0.0f, 360.0f); 
+        ang_to_rotate = ANG_MOV(gen);
+
+        return new Rectangle(in_height, in_width, ang_to_rotate, x, y);
+    }
+
+    Elipse* create_elipse(float in_height, float in_width, std::mt19937& gen)
+    {
+        float x = 0.0f, y = 0.0f;
+
+        std::uniform_real_distribution<> RAD(0.1f, radius); 
+        std::uniform_real_distribution<> ANG_R(start_angle + 1, end_angle - 1);
+
+        float ang_to_convert = ANG_R(gen);
+        float ang = utils::ang_to_rad(ang_to_convert);
+        float ang_to_rotate = 0.0f;    
+        float new_radius = RAD(gen);
+
+        x = new_radius * std::cos(ang);
+        y = new_radius * std::sin(ang);
+
+        std::uniform_real_distribution<> ANG_MOV(0.0f, 360.0f); 
+        ang_to_rotate = ANG_MOV(gen);
+
+        return new Elipse(40, in_height, in_width, ang_to_rotate, x, y);
     }
 
     /*
@@ -350,86 +225,44 @@ public:
     {
         vertices.clear();
         info.clear();
-
-        std::vector<float> outward_vertices;
-        std::vector<float> inward_vertices;
-        unsigned int o_v_count = 0, i_v_count = 0;
-
-
-        for (auto &it : slices)
-        {
-            std::vector<float> i_vertices = it.inner_slice.get_vertices();
-            std::vector<float> o_vertices = it.outward_slice.get_vertices();
-            
-            outward_vertices.insert(outward_vertices.end(), o_vertices.begin(), o_vertices.end());
-            o_v_count = o_vertices.size() / 3;
-
-            
-            inward_vertices.insert(inward_vertices.end(), i_vertices.begin(), i_vertices.end());
-            i_v_count = i_vertices.size() / 3;
-        }
-
-
         unsigned int count = 0;
-        // Outward
-        vertices.insert(vertices.end(), outward_vertices.begin(), outward_vertices.end());
         for (int i = 0; i < n_slices; i++)
         {
-            info.push_back(DrawInfo(count, o_v_count, "OUTWARD SLICE", false, i, &outward_color));
-            count += o_v_count;
-        }
-        
-        // Inward
-        vertices.insert(vertices.end(), inward_vertices.begin(), inward_vertices.end());
-        for (int i = 0; i < n_slices; i++)
-        {
-            info.push_back(DrawInfo(count, i_v_count, "INWARD SLICE", false, i, &inner_color));
-            count += i_v_count;
-        }
+            std::vector<float> i_vertices = slices[i].inner_slice.get_vertices();
+            std::vector<float> o_vertices = slices[i].outward_slice.get_vertices();
+
+            int o_size = o_vertices.size() / 3;
+            vertices.insert(vertices.end(), o_vertices.begin(), o_vertices.end());
+            info.push_back(DrawInfo(count, o_size, "OUTWARD SLICE", false, i, &outward_color));
+            count += o_size;
 
 
-        /*
-        */
-        for (int i = 0; i < n_slices; i++)
-        {
+            int i_size = i_vertices.size() / 3;
+            vertices.insert(vertices.end(), i_vertices.begin(), i_vertices.end());
+            info.push_back(DrawInfo(count, i_size, "INWARD SLICE", false, i, &inner_color));
+            count += i_size;
+
+
             for (auto &t: slices[i].toppings)
             {
                 auto topping_vertices = t.first->get_vertices();
                 int topping_size = topping_vertices.size() / 3;
                 
+                vertices.insert(vertices.end(), topping_vertices.begin(), topping_vertices.end());
                 if (t.second == "PEPPERONI")
-                {
-                    vertices.insert(vertices.end(), topping_vertices.begin(), topping_vertices.end());
                     info.push_back(DrawInfo(count, topping_size, "PEPPERONI", false, i, &pepperoni_color));
-                    count += topping_size;
-                }
                 else if (t.second == "PINEAPPLE")
-                {
-                    vertices.insert(vertices.end(), topping_vertices.begin(), topping_vertices.end());
                     info.push_back(DrawInfo(count, topping_size, "PINEAPPLE", false, i, &pineapple_color));
-                    count += topping_size;
-                }
                 else if (t.second == "OREGANO")
-                {
-                    vertices.insert(vertices.end(), topping_vertices.begin(), topping_vertices.end());
                     info.push_back(DrawInfo(count, topping_size, "OREGANO", false, i, &oregano_color));
-                    count += topping_size;
-                }
                 else if (t.second == "OREGANO RED")
-                {
-                    vertices.insert(vertices.end(), topping_vertices.begin(), topping_vertices.end());
                     info.push_back(DrawInfo(count, topping_size, "OREGANO RED", false, i, &oregano_red_color));
-                    count += topping_size;
-                }
                 else if (t.second == "OLIVE")
-                {
-                    vertices.insert(vertices.end(), topping_vertices.begin(), topping_vertices.end());
                     info.push_back(DrawInfo(count, topping_size, "OLIVE", false, i, &olive_color));
-                    count += topping_size;
-                }
+                count += topping_size;
             }
         }
-        
+            
     }
     
     void move_slice(int slice_index, float mov_x, float mov_y)

@@ -108,7 +108,7 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(width, height, "TEST", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(width, height, "Pizza", nullptr, nullptr);
 
     if (window == nullptr)
     {
@@ -149,15 +149,13 @@ int main()
 
     unsigned int VBO, VAO;
     
-
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
-    
-
     glBindVertexArray(VAO);
     
+    std::cout << "ENTER NUMBER OF SLICES: ";
+    std::cin >> n_slices;
 
-    n_slices = 10;
     Pizza my_pizza(n_slices);
     my_pizza.create_vertices();
 
@@ -175,7 +173,6 @@ int main()
 
     // Unbind - optional for security
     glBindVertexArray(0);
-
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
@@ -197,7 +194,6 @@ int main()
         shaders.set_float("UNIQUE", "scale", 1.0f);
 
         glBindVertexArray(VAO);
-
         my_pizza.render(shaders);
         
         glfwSwapBuffers(window);
