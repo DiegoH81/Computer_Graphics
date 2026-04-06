@@ -7,9 +7,14 @@
 
 namespace utils
 {
-    inline float sexagesimal_to_radian(const float& in_angle )
+    inline float ang_to_rad(const float& in_angle )
     {
         return in_angle * PI / 180.0f;
+    }
+
+    inline float rad_to_ang(const float& in_angle )
+    {
+        return in_angle * 180.0f / PI;
     }
     
 }
