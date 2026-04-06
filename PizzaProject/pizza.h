@@ -48,9 +48,9 @@ public:
 
         
         
-        int pepperoni_count = n_toppings * (2.0f/ 3.0f);
-        int pineapple_count = n_toppings * (1.0f/ 3.0f);
-        
+        int pepperoni_count = 3;
+        int pineapple_count = 2;
+        int olive_count = 2;
         
         
         int counter = 0;
@@ -198,7 +198,108 @@ public:
             toppings.push_back({new Rectangle(0.012f, 0.020f, ang_to_rotate, x, y), "OREGANO"});
             counter++;
         }
+
+        counter = 0;
+        while(counter < n_condiments)
+        {
+            std::uniform_real_distribution<> RAD(0.1f, radius - pepperoni_radius); 
+            std::uniform_real_distribution<> ANG_R(start_angle + 1, end_angle - 1); 
+            float ang_to_convert = ANG_R(gen);
+            float ang = utils::ang_to_rad(ang_to_convert);
+            
+
+            bool valid_rectangle = false;
+            float x = 0.0f;
+            float y = 0.0f;
+            int attempts = 0;
+            
+            float ang_to_rotate = 0.0f;
+            do
+            {
+                
+                float new_radius = RAD(gen);
+                x = new_radius * std::cos(ang);
+                y = new_radius * std::sin(ang);
+
+                std::uniform_real_distribution<> ANG_MOV(0.0f, 360.0f); 
+                ang_to_rotate = ANG_MOV(gen);
+
+                Rectangle temp(0.012f, 0.020f, ang_to_rotate, x, y);
+                
+                valid_rectangle = true;
+                auto v_temp = temp.get_vertices();
+                for (int i = 0; i < 4; i++)
+                {
+                    auto &x = v_temp[3 * i];
+                    auto &y = v_temp[3 * i + 1];
+
+                    float d = std::sqrt(x*x + y*y);
+                    float ang = utils::rad_to_ang(std::atan2(y, x));
+                    
+                    if (d > radius || !is_in_range(ang, start_angle, end_angle))
+                    {
+                        valid_rectangle = false;
+                        break;
+                    }
+                }
+                attempts++;
+            } while (!valid_rectangle && attempts < 100);
+
+            toppings.push_back({new Rectangle(0.012f, 0.020f, ang_to_rotate, x, y), "OREGANO RED"});
+            counter++;
+        }
         
+
+        counter = 0;
+        while(counter < olive_count)
+        {
+            std::uniform_real_distribution<> RAD(0.1f, radius - pepperoni_radius); 
+            std::uniform_real_distribution<> ANG_R(start_angle + 1, end_angle - 1); 
+            float ang_to_convert = ANG_R(gen);
+            float ang = utils::ang_to_rad(ang_to_convert);
+            
+
+            bool valid_olive = false;
+            float x = 0.0f;
+            float y = 0.0f;
+            int attempts = 0;
+            
+            float ang_to_rotate = 0.0f;
+            do
+            {
+                
+                float new_radius = RAD(gen);
+                x = new_radius * std::cos(ang);
+                y = new_radius * std::sin(ang);
+
+                std::uniform_real_distribution<> ANG_MOV(0.0f, 360.0f); 
+                ang_to_rotate = ANG_MOV(gen);
+
+                Elipse temp(0.05f, 0.03f, ang_to_rotate, x, y);
+                
+                valid_olive = true;
+                auto v_temp = temp.get_vertices();
+                int size = v_temp.size() / 3;
+                for (int i = 0; i < size; i++)
+                {
+                    auto &x = v_temp[3 * i];
+                    auto &y = v_temp[3 * i + 1];
+
+                    float d = std::sqrt(x*x + y*y);
+                    float ang = utils::rad_to_ang(std::atan2(y, x));
+                    
+                    if (d > radius || !is_in_range(ang, start_angle, end_angle))
+                    {
+                        valid_olive = false;
+                        break;
+                    }
+                }
+                attempts++;
+            } while (!valid_olive && attempts < 100);
+
+            toppings.push_back({new Elipse(40, 0.05f, 0.03f, ang_to_rotate, x, y), "OLIVE"});
+            counter++;
+        }
 
     }
 
@@ -235,7 +336,9 @@ public:
         inner_color(227, 206, 165, true),
         pepperoni_color(108, 1, 1, true),
         pineapple_color(238, 192, 1, true),
-        oregano_color(136, 134, 62, true)
+        oregano_color(136, 134, 62, true),
+        olive_color(11, 9, 4, true),
+        oregano_red_color(77, 22, 14, true)
     {
         slices.reserve(n_slices);
         float step = 360.0 / float(n_slices);
@@ -309,7 +412,19 @@ public:
                 else if (t.second == "OREGANO")
                 {
                     vertices.insert(vertices.end(), topping_vertices.begin(), topping_vertices.end());
-                    info.push_back(DrawInfo(count, topping_size, "PINEAPPLE", false, i, &oregano_color));
+                    info.push_back(DrawInfo(count, topping_size, "OREGANO", false, i, &oregano_color));
+                    count += topping_size;
+                }
+                else if (t.second == "OREGANO RED")
+                {
+                    vertices.insert(vertices.end(), topping_vertices.begin(), topping_vertices.end());
+                    info.push_back(DrawInfo(count, topping_size, "OREGANO RED", false, i, &oregano_red_color));
+                    count += topping_size;
+                }
+                else if (t.second == "OLIVE")
+                {
+                    vertices.insert(vertices.end(), topping_vertices.begin(), topping_vertices.end());
+                    info.push_back(DrawInfo(count, topping_size, "OLIVE", false, i, &olive_color));
                     count += topping_size;
                 }
             }
@@ -348,7 +463,9 @@ private:
           inner_color,
           pepperoni_color,
           pineapple_color,
-          oregano_color;
+          oregano_color,
+          olive_color,
+          oregano_red_color;
 };
 
 #endif

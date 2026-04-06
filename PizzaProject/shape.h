@@ -12,6 +12,7 @@ public:
         vertices(), indices(), c_x(in_cx), c_y(in_cy) {}
     virtual ~Shape() = default;
 
+    
     std::vector<float> get_vertices()
     {
         return vertices;
@@ -101,7 +102,7 @@ private:
 class Rectangle : public Shape
 {
 public:
-    Rectangle(const float& in_height, // Proportion width over length
+    Rectangle(const float& in_height,
               const float& in_width,
               const float& in_angle = 0.0f,
               const float& in_cx = 0.0f,
@@ -128,6 +129,48 @@ public:
             float rot_y = x * sin_a + y * cos_a;
 
             vertices.push_back(rot_x + in_cx); vertices.push_back(rot_y + in_cy); vertices.push_back(0.0f);
+        }
+    }
+};
+
+class Elipse : public Shape
+{
+public:
+    Elipse(const unsigned int& in_points,
+           const float& in_height,
+           const float& in_width,
+           const float& in_angle = 0.0f,
+           const float& in_cx = 0.0f,
+           const float& in_cy = 0.0f):
+        Shape(in_cx, in_cy)
+    {
+        float ang = utils::ang_to_rad(in_angle);
+        float cos_a = std::cos(ang);
+        float sin_a = std::sin(ang);
+
+        vertices.push_back(0.0f); vertices.push_back(0.0f); vertices.push_back(0.0f);
+
+        float step = 360.0 / float(in_points);
+
+        for (int i = 0; i <= in_points; i++)
+        {
+            float ang_step = utils::ang_to_rad(i * step);
+
+            float x = std::cos(ang_step) * in_width;
+            float y = std::sin(ang_step) * in_height;
+
+            vertices.push_back(x); vertices.push_back(y); vertices.push_back(0.0f);
+        }
+
+        for (int i = 0; i <= in_points + 1; i++)
+        {
+            auto &x = vertices[3 * i];
+            auto &y = vertices[3 * i + 1];
+
+            float rot_x = x * cos_a - y * sin_a;
+            float rot_y = x * sin_a + y * cos_a;
+
+            x = rot_x + in_cx; y = rot_y + in_cy;
         }
     }
 };
