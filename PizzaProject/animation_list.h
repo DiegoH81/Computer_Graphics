@@ -64,15 +64,33 @@ public:
                     auto &type = t.type;
 
                     if (type == "MOVE_X")
-                        i.model.translate(t.move, 0.0f, 0.0f);
+                        i.model.traslate(t.move, 0.0f, 0.0f);
                     else if (type == "MOVE_Y")
-                        i.model.translate(0.0f, t.move, 0.0f);
+                        i.model.traslate(0.0f, t.move, 0.0f);
                     else if (type == "ROTATE_X")
                         i.model.rotate_x(t.move);
                     else if (type == "ROTATE_Y")
                         i.model.rotate_y(t.move);
                     else if (type == "ROTATE_Z")
                         i.model.rotate_z(t.move);
+                    else if (type == "ROTATE_C_X")
+                    {
+                        i.model.traslate(-i.c_x, -i.c_y, -i.c_z);
+                        i.model.rotate_x(t.move);
+                        i.model.traslate(i.c_x, i.c_y, i.c_z);
+                    }
+                    else if (type == "ROTATE_C_Y")
+                    {
+                        i.model.traslate(-i.c_x, -i.c_y, -i.c_z);
+                        i.model.rotate_y(t.move);
+                        i.model.traslate(i.c_x, i.c_y, i.c_z);
+                    }
+                    else if (type == "ROTATE_C_Z")
+                    {
+                        i.model.traslate(-i.c_x, -i.c_y, -i.c_z);
+                        i.model.rotate_z(t.move);
+                        i.model.traslate(i.c_x, i.c_y, i.c_z);
+                    }
                     else if (type == "SCALE")
                         i.model.scale(t.move, t.move, t.move);
                 }

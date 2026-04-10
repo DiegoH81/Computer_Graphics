@@ -8,8 +8,10 @@
 class Shape
 {
 public:
-    Shape(const float& in_cx = 0.0f, const float& in_cy = 0.0f):
-        vertices(), indices(), c_x(in_cx), c_y(in_cy) {}
+    float c_x, c_y, c_z;
+
+    Shape(const float& in_cx = 0.0f, const float& in_cy = 0.0f, const float& in_cz = 0.0f):
+        vertices(), indices(), c_x(in_cx), c_y(in_cy), c_z(in_cz) {}
     virtual ~Shape() = default;
 
     
@@ -25,7 +27,6 @@ public:
     bool has_indices() { return !indices.empty(); }
 
 protected:
-    float c_x, c_y;
     std::vector <float> vertices;
     std::vector <unsigned int> indices;
 };
@@ -69,34 +70,37 @@ public:
                     const float& in_start,
                     const float& in_end,
                     const float& in_radius = 1.0f,
-                    const float& in_cx = 0.0f,
-                    const float& in_cy = 0.0f):
-        n_points(in_points), radius(in_radius), start_angle(in_start), end_angle(in_end), Shape(in_cx, in_cy)
+                    const float& in_ox = 0.0f,
+                    const float& in_oy = 0.0f):
+        n_points(in_points), radius(in_radius), start_angle(in_start), end_angle(in_end), Shape()
     {
-        create_segment();
+        float range = end_angle - start_angle;
+        float step = range / float(n_points);
+        
+        vertices.push_back(in_ox); vertices.push_back(in_oy); vertices.push_back(0.0f);
+
+        for (int i = 0; i <= n_points; i++)
+        {
+            float ang = utils::ang_to_rad(start_angle+ (i * step));
+            float x = in_ox + radius * std::cos(ang);
+            float y = in_oy + radius * std::sin(ang);
+            
+            vertices.push_back(x); vertices.push_back(y); vertices.push_back(0.0f);
+        }
+
+        float mid_angle = start_angle + (end_angle - start_angle) / 2.0f;
+        float mid_radius = radius / 2.0f;
+
+        float ang = utils::ang_to_rad(mid_angle);
+        c_x = in_ox + mid_radius * std::cos(ang);
+        c_y = in_oy + mid_radius * std::sin(ang);
+
     }
 
     
 private:
     unsigned int n_points;
     float radius, start_angle, end_angle;
-
-    void create_segment()
-    {
-        float range = end_angle - start_angle;
-        float step = range / float(n_points);
-        
-        vertices.push_back(c_x); vertices.push_back(c_y); vertices.push_back(0.0f);
-
-        for (int i = 0; i <= n_points; i++)
-        {
-            float ang = utils::ang_to_rad(start_angle+ (i * step));
-            float x = c_x + radius * std::cos(ang);
-            float y = c_y + radius * std::sin(ang);
-            
-            vertices.push_back(x); vertices.push_back(y); vertices.push_back(0.0f);
-        }
-    }
 };
 
 class Rectangle : public Shape
