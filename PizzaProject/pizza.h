@@ -256,7 +256,7 @@ public:
     {
         for (auto &m_i : info)
         {
-            if (m_i.slice_id == slice_index)
+            if (m_i.id == slice_index)
                 m_i.model.translate(mov_x, mov_y, 0);
         }
     }
@@ -265,7 +265,7 @@ public:
     {
         for (auto &m_i : info)
         {
-            if (m_i.slice_id == slice_index)
+            if (m_i.id == slice_index)
                 m_i.model.rotate_x(angle);
         }
     }
@@ -274,7 +274,7 @@ public:
     {
         for (auto &m_i : info)
         {
-            if (m_i.slice_id == slice_index)
+            if (m_i.id == slice_index)
                 m_i.model.rotate_y(angle);
         }
     }

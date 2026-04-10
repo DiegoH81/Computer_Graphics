@@ -12,13 +12,16 @@
 
 #include "shaderList.h"
 #include "pizza.h"
+#include "animation_list.h"
 
 #define PI 3.14159265359
 
 float bgR = 0.0f, bgG = 0.0f, bgB = 0.0f;
-bool is_moving = false;
+bool is_moving = true;
 int slice_id = 0;
 unsigned int n_slices = 0;
+AnimationList animations;
+
 
 float offset = 0.1f;
 
@@ -84,7 +87,7 @@ void key_call_back(GLFWwindow* in_window, int key, int scan_code, int action, in
         std::cout << "Moving slice " << slice_id << "\n";
     }
     else if ( key == GLFW_KEY_P && action == GLFW_PRESS)
-        is_moving = false;
+        is_moving = !is_moving;
     else if ( key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT) )
         pizzaPtr->move_slice(slice_id, -offset, 0.0f);
     else if ( key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT) )
@@ -105,6 +108,14 @@ void key_call_back(GLFWwindow* in_window, int key, int scan_code, int action, in
         pizzaPtr->rotate_slice_y(slice_id, 10.0f);
     else if ( key == GLFW_KEY_L && (action == GLFW_PRESS || action == GLFW_REPEAT) )
         pizzaPtr->rotate_slice_y(slice_id, -10.0f);
+    else if ( key == GLFW_KEY_Z && (action == GLFW_PRESS || action == GLFW_REPEAT) )
+    {
+        animations.add_animation(slice_id, {AnimationInfo(slice_id, 0.5, "MOVE_X"),
+                                            AnimationInfo(slice_id, 60, "ROTATE_Z"),
+                                            AnimationInfo(slice_id, 30, "ROTATE_X"),
+                                            AnimationInfo(slice_id, 30, "ROTATE_Y")},
+                                            120);
+    }
     
 }
 
@@ -188,16 +199,19 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
+    
 
 
     // Bucle
-	
 	glPointSize(10.0f);
 	glLineWidth(5.0f);
 
 
     while(!glfwWindowShouldClose(window))
     {
+        if (is_moving)
+            animations.process_animations(my_pizza.info);
+
         glClearColor(bgR, bgG, bgB, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         

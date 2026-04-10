@@ -11,30 +11,6 @@ class Matrix_4
 public:
     std::vector<float> matrix;
 
-    /*
-    class Row
-    {
-        public:
-        Row(const int& in_row, std::vector<float>& in_matrix):
-        row(in_row), matrix(in_matrix)
-        {}
-        
-        float& operator [](const int& in_idx)
-        {
-            return matrix[4*row + in_idx];
-        }
-        
-        private:
-        int row;
-        std::vector<float>& matrix;
-    };
-    
-    Row operator[] (const int& in_idx)
-    {
-        return Row(in_idx, matrix);
-    }
-    */
-
     Matrix_4():
         matrix(16)
     { 
