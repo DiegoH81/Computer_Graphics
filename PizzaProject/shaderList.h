@@ -12,6 +12,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include "matrix.h"
 
 class ShaderList
 {
@@ -76,6 +77,13 @@ public:
         unsigned int current_program = shader_programs[shader_name];
         int uniform = glGetUniformLocation(current_program, uniform_name.c_str());
         glUniform3f(uniform, x, y, z);
+    }
+
+    void set_mat4(const std::string& shader_name, const std::string& uniform_name, Matrix_4& in_matrix)
+    {
+        unsigned int current_program = shader_programs[shader_name];
+        int uniform = glGetUniformLocation(current_program, uniform_name.c_str());
+        glUniformMatrix4fv(uniform, 1, GL_TRUE, in_matrix.matrix.data());
     }
 
     void set_float(const std::string& shader_name, const std::string& uniform_name, float val)
