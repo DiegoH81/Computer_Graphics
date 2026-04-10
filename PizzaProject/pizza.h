@@ -7,23 +7,8 @@
 
 #include "shape.h"
 #include "color.h"
-
-class DrawInfo
-{
-public:
-    unsigned int start_vertex, vertex_count, slice_id;
-    float x, y;
-    std::string type;
-    Color *color;
-    bool use_indices;
-
-    DrawInfo(unsigned int in_start_vertex, unsigned int in_vertex_count,
-            std::string in_type, bool in_use_indices,
-            unsigned int in_slice_id, Color* in_Color = nullptr):
-        start_vertex(in_start_vertex), vertex_count(in_vertex_count), type(in_type), use_indices(in_use_indices), color(in_Color),
-        x(0.0f), y(0.0f), slice_id(in_slice_id)
-    {}
-};
+#include "draw_info.h"
+#include "matrix.h"
 
 class PizzaSlice
 {
@@ -204,8 +189,10 @@ class Pizza
 public:
     std::vector<float> vertices;
     std::vector<DrawInfo> info;
+    unsigned int VBO;
 
-    Pizza(unsigned int in_slices):
+    Pizza(unsigned int in_slices, unsigned int in_VBO):
+        VBO(in_VBO),
         n_slices(in_slices), slices(), vertices(), info(),
         outward_color(218, 159, 110, true),
         inner_color(227, 206, 165, true),
@@ -270,12 +257,28 @@ public:
         for (auto &m_i : info)
         {
             if (m_i.slice_id == slice_index)
-            {
-                m_i.x += mov_x;
-                m_i.y += mov_y;
-            }
+                m_i.model.translate(mov_x, mov_y, 0);
         }
     }
+
+    void rotate_slice_x(int slice_index, float angle)
+    {
+        for (auto &m_i : info)
+        {
+            if (m_i.slice_id == slice_index)
+                m_i.model.rotate_x(angle);
+        }
+    }
+
+    void rotate_slice_y(int slice_index, float angle)
+    {
+        for (auto &m_i : info)
+        {
+            if (m_i.slice_id == slice_index)
+                m_i.model.rotate_y(angle);
+        }
+    }
+
 
     void render(ShaderList& shaders)
     {
@@ -283,7 +286,7 @@ public:
         {
             auto &color = m_i.color;
             shaders.set_vec3("UNIQUE", "color", color->r, color->g, color->b);
-            shaders.set_vec2("UNIQUE", "offset", m_i.x, m_i.y);
+            shaders.set_mat4("UNIQUE", "model", m_i.model);
             glDrawArrays(GL_TRIANGLE_FAN, m_i.start_vertex, m_i.vertex_count);
         }
 

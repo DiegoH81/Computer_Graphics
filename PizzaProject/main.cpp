@@ -24,11 +24,10 @@ float offset = 0.1f;
 
 const char *vertexShaderSource = "#version 330 core\n"
                                  "layout (location = 0) in vec3 aPos;\n"
-                                 "uniform vec2 offset;\n"
-                                 "uniform float scale;\n"
+                                 "uniform mat4 model;\n"
                                  "void main()\n"
                                  "{\n"
-                                 "  gl_Position = vec4(aPos.x * scale + offset.x, aPos.y * scale + offset.y, aPos.z, 1.0);\n"
+                                 "  gl_Position = model * vec4(aPos, 1.0);\n"
                                  "}\0";
 
 const char *fragmentShader = "#version 330 core\n"
@@ -94,6 +93,19 @@ void key_call_back(GLFWwindow* in_window, int key, int scan_code, int action, in
         pizzaPtr->move_slice(slice_id, 0.0f, +offset);
     else if ( key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT) )
         pizzaPtr->move_slice(slice_id, 0.0f, -offset);
+    else if ( key == GLFW_KEY_I && (action == GLFW_PRESS || action == GLFW_REPEAT) )
+        pizzaPtr->rotate_slice_x(slice_id, 10.0f);
+    else if ( key == GLFW_KEY_O && (action == GLFW_PRESS || action == GLFW_REPEAT) )
+        pizzaPtr->rotate_slice_x(slice_id, -10.0f);
+    else if ( key == GLFW_KEY_I && (action == GLFW_PRESS || action == GLFW_REPEAT) )
+        pizzaPtr->rotate_slice_x(slice_id, 10.0f);
+    else if ( key == GLFW_KEY_O && (action == GLFW_PRESS || action == GLFW_REPEAT) )
+        pizzaPtr->rotate_slice_x(slice_id, -10.0f);
+    else if ( key == GLFW_KEY_K && (action == GLFW_PRESS || action == GLFW_REPEAT) )
+        pizzaPtr->rotate_slice_y(slice_id, 10.0f);
+    else if ( key == GLFW_KEY_L && (action == GLFW_PRESS || action == GLFW_REPEAT) )
+        pizzaPtr->rotate_slice_y(slice_id, -10.0f);
+    
 }
 
 int main()
@@ -156,7 +168,7 @@ int main()
     std::cout << "ENTER NUMBER OF SLICES: ";
     std::cin >> n_slices;
 
-    Pizza my_pizza(n_slices);
+    Pizza my_pizza(n_slices, VBO);
     my_pizza.create_vertices();
 
     std::cout << "Moving slice " << slice_id << "\n";
