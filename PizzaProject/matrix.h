@@ -83,7 +83,7 @@ public:
         *this = mat * (*this);
     }
 
-    void translate(float m_x, float m_y, float m_z)
+    void traslate(float m_x, float m_y, float m_z)
     {
         Matrix_4 mat;
         mat.set_matrix({ 1, 0, 0, m_x,
@@ -137,6 +137,22 @@ public:
                            0,    0,  0,  1});
 
         *this = mat * (*this);
+    }
+
+    void transpose()
+    {
+        std::vector<float> temp(16, 0);
+        for (int i = 0; i < 4; i++)
+        {
+            for (int j = 0; j < 4; j++)
+            {
+                int pos = (4*i) + j;
+                int t_pos = i + (4 * j);
+                temp[pos] = matrix[t_pos];
+            }
+        }
+
+        matrix = temp;
     }
 };
 

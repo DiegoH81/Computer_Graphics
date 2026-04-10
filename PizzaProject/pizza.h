@@ -215,37 +215,58 @@ public:
         unsigned int count = 0;
         for (int i = 0; i < n_slices; i++)
         {
-            std::vector<float> i_vertices = slices[i].inner_slice.get_vertices();
-            std::vector<float> o_vertices = slices[i].outward_slice.get_vertices();
+
+            auto &inner_slice = slices[i].inner_slice;
+            auto &outward_slice = slices[i].outward_slice;
+
+            std::vector<float> i_vertices = inner_slice.get_vertices();
+            std::vector<float> o_vertices = outward_slice.get_vertices();
+
+
+
 
             int o_size = o_vertices.size() / 3;
             vertices.insert(vertices.end(), o_vertices.begin(), o_vertices.end());
-            info.push_back(DrawInfo(count, o_size, "OUTWARD SLICE", false, i, &outward_color));
+            info.push_back(DrawInfo(count, o_size, "OUTWARD SLICE", false, i, &outward_color,
+                                inner_slice.c_x,
+                                inner_slice.c_y,
+                                inner_slice.c_z));
             count += o_size;
 
 
             int i_size = i_vertices.size() / 3;
             vertices.insert(vertices.end(), i_vertices.begin(), i_vertices.end());
-            info.push_back(DrawInfo(count, i_size, "INWARD SLICE", false, i, &inner_color));
+            info.push_back(DrawInfo(count, i_size, "INWARD SLICE", false, i, &inner_color,
+                                outward_slice.c_x,
+                                outward_slice.c_y,
+                                outward_slice.c_z));
             count += i_size;
 
 
             for (auto &t: slices[i].toppings)
             {
-                auto topping_vertices = t.first->get_vertices();
+                auto &topping = t.first;
+                auto topping_vertices = topping->get_vertices();
                 int topping_size = topping_vertices.size() / 3;
                 
                 vertices.insert(vertices.end(), topping_vertices.begin(), topping_vertices.end());
+
+                Color* selected_color = nullptr;
                 if (t.second == "PEPPERONI")
-                    info.push_back(DrawInfo(count, topping_size, "PEPPERONI", false, i, &pepperoni_color));
+                    selected_color = &pepperoni_color;
                 else if (t.second == "PINEAPPLE")
-                    info.push_back(DrawInfo(count, topping_size, "PINEAPPLE", false, i, &pineapple_color));
+                    selected_color = &pineapple_color;
                 else if (t.second == "OREGANO")
-                    info.push_back(DrawInfo(count, topping_size, "OREGANO", false, i, &oregano_color));
+                    selected_color = &oregano_color;
                 else if (t.second == "OREGANO RED")
-                    info.push_back(DrawInfo(count, topping_size, "OREGANO RED", false, i, &oregano_red_color));
+                    selected_color = &oregano_red_color;
                 else if (t.second == "OLIVE")
-                    info.push_back(DrawInfo(count, topping_size, "OLIVE", false, i, &olive_color));
+                    selected_color = &olive_color;
+
+                info.push_back(DrawInfo(count, topping_size, t.second, false, i, selected_color,
+                                                inner_slice.c_x,
+                                                inner_slice.c_y,
+                                                inner_slice.c_z));
                 count += topping_size;
             }
         }
@@ -257,7 +278,7 @@ public:
         for (auto &m_i : info)
         {
             if (m_i.id == slice_index)
-                m_i.model.translate(mov_x, mov_y, 0);
+                m_i.model.traslate(mov_x, mov_y, 0);
         }
     }
 
@@ -279,7 +300,54 @@ public:
         }
     }
 
+    void rotate_slice_z(int slice_index, float angle)
+    {
+        for (auto &m_i : info)
+        {
+            if (m_i.id == slice_index)
+                m_i.model.rotate_z(angle);
+        }
+    }
 
+    void rotate_slice_c_x(int slice_index, float angle)
+    {
+        for (auto &m_i : info)
+        {
+            if (m_i.id == slice_index)
+            {
+                m_i.model.traslate(-m_i.c_x, -m_i.c_y, -m_i.c_z);
+                m_i.model.rotate_x(angle);
+                m_i.model.traslate(m_i.c_x, m_i.c_y, m_i.c_z);
+            }
+        }
+    }
+
+    void rotate_slice_c_y(int slice_index, float angle)
+    {
+        for (auto &m_i : info)
+        {
+            if (m_i.id == slice_index)
+            {
+                m_i.model.traslate(-m_i.c_x, -m_i.c_y, -m_i.c_z);
+                m_i.model.rotate_y(angle);
+                m_i.model.traslate(m_i.c_x, m_i.c_y, m_i.c_z);
+            }
+        }
+    }
+
+    void rotate_slice_c_z(int slice_index, float angle)
+    {
+        for (auto &m_i : info)
+        {
+            if (m_i.id == slice_index)
+            {
+                m_i.model.traslate(-m_i.c_x, -m_i.c_y, -m_i.c_z);
+                m_i.model.rotate_z(angle);
+                m_i.model.traslate(m_i.c_x, m_i.c_y, m_i.c_z);
+            }
+        }
+    }
+    
     void render(ShaderList& shaders)
     {
         for (auto &m_i : info)

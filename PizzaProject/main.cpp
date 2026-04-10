@@ -18,6 +18,7 @@
 
 float bgR = 0.0f, bgG = 0.0f, bgB = 0.0f;
 bool is_moving = true;
+bool is_rotating_with_own_center = false;
 int slice_id = 0;
 unsigned int n_slices = 0;
 AnimationList animations;
@@ -96,18 +97,50 @@ void key_call_back(GLFWwindow* in_window, int key, int scan_code, int action, in
         pizzaPtr->move_slice(slice_id, 0.0f, +offset);
     else if ( key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT) )
         pizzaPtr->move_slice(slice_id, 0.0f, -offset);
-    else if ( key == GLFW_KEY_I && (action == GLFW_PRESS || action == GLFW_REPEAT) )
-        pizzaPtr->rotate_slice_x(slice_id, 10.0f);
+    else if ( key == GLFW_KEY_I && (action == GLFW_PRESS || action == GLFW_REPEAT) ) // X
+    {
+        if (is_rotating_with_own_center)
+            pizzaPtr->rotate_slice_c_x(slice_id, 10.0f);
+        else
+            pizzaPtr->rotate_slice_x(slice_id, 10.0f);
+    }
     else if ( key == GLFW_KEY_O && (action == GLFW_PRESS || action == GLFW_REPEAT) )
-        pizzaPtr->rotate_slice_x(slice_id, -10.0f);
-    else if ( key == GLFW_KEY_I && (action == GLFW_PRESS || action == GLFW_REPEAT) )
-        pizzaPtr->rotate_slice_x(slice_id, 10.0f);
-    else if ( key == GLFW_KEY_O && (action == GLFW_PRESS || action == GLFW_REPEAT) )
-        pizzaPtr->rotate_slice_x(slice_id, -10.0f);
-    else if ( key == GLFW_KEY_K && (action == GLFW_PRESS || action == GLFW_REPEAT) )
-        pizzaPtr->rotate_slice_y(slice_id, 10.0f);
+    {
+        if (is_rotating_with_own_center)
+            pizzaPtr->rotate_slice_c_x(slice_id, -10.0f);
+        else
+            pizzaPtr->rotate_slice_x(slice_id, -10.0f);
+    }
+    else if ( key == GLFW_KEY_K && (action == GLFW_PRESS || action == GLFW_REPEAT) ) // Y
+    {
+        if (is_rotating_with_own_center)
+            pizzaPtr->rotate_slice_c_y(slice_id, 10.0f);
+        else
+            pizzaPtr->rotate_slice_y(slice_id, 10.0f);
+    }
     else if ( key == GLFW_KEY_L && (action == GLFW_PRESS || action == GLFW_REPEAT) )
-        pizzaPtr->rotate_slice_y(slice_id, -10.0f);
+    {
+        if (is_rotating_with_own_center)
+            pizzaPtr->rotate_slice_c_y(slice_id, -10.0f);
+        else
+            pizzaPtr->rotate_slice_y(slice_id, -10.0f);
+    }
+    else if ( key == GLFW_KEY_N && (action == GLFW_PRESS || action == GLFW_REPEAT) ) // Z
+    {
+        if (is_rotating_with_own_center)
+            pizzaPtr->rotate_slice_c_z(slice_id, 10.0f);
+        else
+            pizzaPtr->rotate_slice_z(slice_id, 10.0f);
+    }
+    else if ( key == GLFW_KEY_M && (action == GLFW_PRESS || action == GLFW_REPEAT) )
+    {
+        if (is_rotating_with_own_center)
+            pizzaPtr->rotate_slice_c_z(slice_id, -10.0f);
+        else
+        pizzaPtr->rotate_slice_z(slice_id, -10.0f);
+    }
+    else if ( key == GLFW_KEY_T && (action == GLFW_PRESS || action == GLFW_REPEAT) )
+        is_rotating_with_own_center = !is_rotating_with_own_center;
     else if ( key == GLFW_KEY_Z && (action == GLFW_PRESS || action == GLFW_REPEAT) )
     {
         animations.add_animation(slice_id, {AnimationInfo(slice_id, 0.5, "MOVE_X"),
@@ -116,7 +149,6 @@ void key_call_back(GLFWwindow* in_window, int key, int scan_code, int action, in
                                             AnimationInfo(slice_id, 30, "ROTATE_Y")},
                                             120);
     }
-    
 }
 
 int main()
