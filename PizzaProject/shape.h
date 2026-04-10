@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "utils.h"
+#include "indices_info.h"
 
 class Shape
 {
@@ -19,16 +20,25 @@ public:
     {
         return vertices;
     }
+
     std::vector<unsigned int> get_indices()
     {
         return indices;
     }
+
+    std::vector<IndicesInfo> get_indices_info()
+    {
+        return indices_info;
+    }
+
+
 
     bool has_indices() { return !indices.empty(); }
 
 protected:
     std::vector <float> vertices;
     std::vector <unsigned int> indices;
+    std::vector <IndicesInfo> indices_info;
 };
 
 class Circle : public Shape
@@ -176,6 +186,144 @@ public:
 
             x = rot_x + in_cx; y = rot_y + in_cy;
         }
+    }
+};
+
+class Pyramid : public Shape
+{
+public:
+    Pyramid(const float& in_height,
+            const float& in_base,
+            const float& in_cx = 0.0f,
+            const float& in_cy = 0.0f,
+            const float& in_cz = 0.0f):
+        Shape(in_cx, in_cy, in_cz)
+    {
+        float h = in_height / 2.0f;
+        float b = in_base  / 2.0f;
+
+        // Apex
+        vertices.push_back(in_cx);       vertices.push_back(in_cy + h);  vertices.push_back(in_cz);
+
+        // FL FR BR BL
+        vertices.push_back(in_cx - b);   vertices.push_back(in_cy - h);  vertices.push_back(in_cz + b);
+        vertices.push_back(in_cx + b);   vertices.push_back(in_cy - h);  vertices.push_back(in_cz + b);
+        vertices.push_back(in_cx + b);   vertices.push_back(in_cy - h);  vertices.push_back(in_cz - b);
+        vertices.push_back(in_cx - b);   vertices.push_back(in_cy - h);  vertices.push_back(in_cz - b);
+
+        // Faces
+        indices.push_back(0); indices.push_back(1); indices.push_back(2);
+        indices.push_back(0); indices.push_back(2); indices.push_back(3);
+        indices.push_back(0); indices.push_back(3); indices.push_back(4);
+        indices.push_back(0); indices.push_back(4); indices.push_back(1);
+
+        indices_info.push_back(IndicesInfo(0, 12, GL_TRIANGLES));
+
+
+        // Base 
+        indices.push_back(1); indices.push_back(2); indices.push_back(3);
+        indices.push_back(1); indices.push_back(3); indices.push_back(4);
+        indices_info.push_back(IndicesInfo(12, 6, GL_TRIANGLES));
+    }
+};
+
+class Cube : public Shape
+{
+public:
+    Cube(const float& in_size,
+         const float& in_cx = 0.0f,
+         const float& in_cy = 0.0f,
+         const float& in_cz = 0.0f):
+        Shape(in_cx, in_cy, in_cz)
+    {
+        float s = in_size / 2.0f;
+
+        //    7   6
+        //  3   2
+        //
+        //    4   5
+        //  0   1
+
+        vertices.push_back(in_cx - s); vertices.push_back(in_cy - s); vertices.push_back(in_cz + s); // 0 FL
+        vertices.push_back(in_cx + s); vertices.push_back(in_cy - s); vertices.push_back(in_cz + s); // 1 FR
+        vertices.push_back(in_cx + s); vertices.push_back(in_cy + s); vertices.push_back(in_cz + s); // 2 TR
+        vertices.push_back(in_cx - s); vertices.push_back(in_cy + s); vertices.push_back(in_cz + s); // 3 TL
+        vertices.push_back(in_cx - s); vertices.push_back(in_cy - s); vertices.push_back(in_cz - s); // 4 BL
+        vertices.push_back(in_cx + s); vertices.push_back(in_cy - s); vertices.push_back(in_cz - s); // 5 BR
+        vertices.push_back(in_cx + s); vertices.push_back(in_cy + s); vertices.push_back(in_cz - s); // 6 TR back
+        vertices.push_back(in_cx - s); vertices.push_back(in_cy + s); vertices.push_back(in_cz - s); // 7 TL back
+
+        // Front
+        indices.push_back(0); indices.push_back(1); indices.push_back(2);
+        indices.push_back(0); indices.push_back(2); indices.push_back(3);
+        // Back
+        indices.push_back(5); indices.push_back(4); indices.push_back(7);
+        indices.push_back(5); indices.push_back(7); indices.push_back(6);
+        // Left
+        indices.push_back(4); indices.push_back(0); indices.push_back(3);
+        indices.push_back(4); indices.push_back(3); indices.push_back(7);
+        // Right
+        indices.push_back(1); indices.push_back(5); indices.push_back(6);
+        indices.push_back(1); indices.push_back(6); indices.push_back(2);
+        // Top
+        indices.push_back(3); indices.push_back(2); indices.push_back(6);
+        indices.push_back(3); indices.push_back(6); indices.push_back(7);
+        // Bottom
+        indices.push_back(4); indices.push_back(5); indices.push_back(1);
+        indices.push_back(4); indices.push_back(1); indices.push_back(0);
+
+        indices_info.push_back(IndicesInfo(0, 36, GL_TRIANGLES));
+    }
+};
+
+class Cone : public Shape
+{
+public:
+    Cone(const unsigned int& in_points,
+         const float& in_height,
+         const float& in_radius = 1.0f,
+         const float& in_cx = 0.0f,
+         const float& in_cy = 0.0f,
+         const float& in_cz = 0.0f):
+        Shape(in_cx, in_cy, in_cz)
+    {
+        float h = in_height / 2.0f;
+        float step = 360.0f / float(in_points);
+
+        // Apex
+        vertices.push_back(in_cx); vertices.push_back(in_cy + h); vertices.push_back(in_cz);
+
+        // Base
+        for (int i = 0; i <= in_points; i++)
+        {
+            float ang = utils::ang_to_rad(i * step);
+            float x = in_cx + in_radius * std::cos(ang);
+            float z = in_cz + in_radius * std::sin(ang);
+            vertices.push_back(x); vertices.push_back(in_cy - h); vertices.push_back(z);
+        }
+
+        // Base center
+        vertices.push_back(in_cx); vertices.push_back(in_cy - h); vertices.push_back(in_cz);
+        unsigned int center = in_points + 2;
+
+        // Lateral
+        for (unsigned int i = 1; i <= in_points; i++)
+        {
+            indices.push_back(0);
+            indices.push_back(i);
+            indices.push_back(i + 1);
+        }
+        indices_info.push_back(IndicesInfo(0, in_points * 3, GL_TRIANGLES));
+
+        // Base
+        unsigned int base_start = in_points * 3;
+        for (unsigned int i = 1; i <= in_points; i++)
+        {
+            indices.push_back(center);
+            indices.push_back(i + 1);
+            indices.push_back(i);
+        }
+        indices_info.push_back(IndicesInfo(base_start, in_points * 3, GL_TRIANGLES));
     }
 };
 
