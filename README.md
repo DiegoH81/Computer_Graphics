@@ -10,3 +10,4 @@ This repository hosts the homeworks from the **Computer Graphics** course. The f
 
 ## Projects
 - `PizzaProject\`: A project that consists in implementing a pizza, focusing on the fundamentals of OpenGL.
+- `Animation\`: Implementing animations, aswell as a basic Scene Graph like idea.
