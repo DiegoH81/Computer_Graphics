@@ -1,6 +1,9 @@
 #ifndef SHAPE_H
 #define SHAPE_H
 
+#define YES_EBO true
+#define NO_EBO false
+
 #include <vector>
 
 #include "matrix.h"
@@ -163,14 +166,14 @@ private:
         }
 
         int v_count = vertices.size() / 3;
-        info_faces.push_back(IndicesInfo(0, v_count, GL_TRIANGLE_FAN, false, in_color));
+        info_faces.push_back(IndicesInfo(0, v_count, GL_TRIANGLE_FAN, NO_EBO, in_color));
     }
 
     void add_edges(Color* in_color) override
     {
         int v_count = (vertices.size() / 3) - 1;
 
-        info_edges.push_back(IndicesInfo(1, v_count, GL_LINE_LOOP, false, in_color));
+        info_edges.push_back(IndicesInfo(1, v_count, GL_LINE_LOOP, NO_EBO, in_color));
     }
 };
 
@@ -228,14 +231,14 @@ private:
 
 
         int v_count = vertices.size() / 3;
-        info_faces.push_back(IndicesInfo(0, v_count, GL_TRIANGLE_FAN, false, in_color));
+        info_faces.push_back(IndicesInfo(0, v_count, GL_TRIANGLE_FAN, NO_EBO, in_color));
     }
 
     void add_edges(Color* in_color) override
     {
         int v_count = vertices.size() / 3;
 
-        info_edges.push_back(IndicesInfo(0, v_count, GL_LINE_LOOP, false, in_color));
+        info_edges.push_back(IndicesInfo(0, v_count, GL_LINE_LOOP, NO_EBO, in_color));
     }
 };
 
@@ -280,7 +283,7 @@ private:
         }
 
         int v_count = vertices.size() / 3;
-        info_faces.push_back(IndicesInfo(0, v_count, GL_TRIANGLE_FAN, false, in_color));
+        info_faces.push_back(IndicesInfo(0, v_count, GL_TRIANGLE_FAN, NO_EBO, in_color));
     }
 
 
@@ -288,7 +291,7 @@ private:
     {
         int v_count = vertices.size() / 3;
 
-        info_edges.push_back(IndicesInfo(0, v_count, GL_LINE_LOOP, false, in_color));
+        info_edges.push_back(IndicesInfo(0, v_count, GL_LINE_LOOP, NO_EBO, in_color));
     }
 
     void add_points(Color* in_color) override
@@ -296,7 +299,7 @@ private:
         int v_count = vertices.size() / 3;
 
         for (int i = 0; i < v_count; i++)
-            info_points.push_back(IndicesInfo(i, 1, GL_POINTS, false, in_color));
+            info_points.push_back(IndicesInfo(i, 1, GL_POINTS, NO_EBO, in_color));
     }
 
 };
@@ -341,14 +344,14 @@ private:
         }
 
         int v_count = vertices.size() / 3;
-        info_faces.push_back(IndicesInfo(0, v_count, GL_TRIANGLE_FAN, false, in_color));
+        info_faces.push_back(IndicesInfo(0, v_count, GL_TRIANGLE_FAN, NO_EBO, in_color));
     }
 
     void add_edges(Color* in_color) override
     {
         int v_count = (vertices.size() / 3) - 1;
 
-        info_edges.push_back(IndicesInfo(1, v_count, GL_LINE_LOOP, false, in_color));
+        info_edges.push_back(IndicesInfo(1, v_count, GL_LINE_LOOP, NO_EBO, in_color));
     }
 };
 
@@ -370,6 +373,9 @@ public:
     {
         create_pyramid(&base_color);
         
+
+        if (has_edges)
+            add_edges(&base_color);
         if (has_points)
             add_points(&base_color);
     }
@@ -393,22 +399,22 @@ private:
 
         // Faces
         indices.push_back(0); indices.push_back(1); indices.push_back(2);
-        info_faces.push_back(IndicesInfo(0, 3, GL_TRIANGLES, true, in_color));
+        info_faces.push_back(IndicesInfo(0, 3, GL_TRIANGLES, YES_EBO, in_color));
 
         indices.push_back(0); indices.push_back(2); indices.push_back(3);
-        info_faces.push_back(IndicesInfo(3, 3, GL_TRIANGLES, true, in_color));
+        info_faces.push_back(IndicesInfo(3, 3, GL_TRIANGLES, YES_EBO, in_color));
 
         indices.push_back(0); indices.push_back(3); indices.push_back(4);
-        info_faces.push_back(IndicesInfo(6, 3, GL_TRIANGLES, true, in_color));
+        info_faces.push_back(IndicesInfo(6, 3, GL_TRIANGLES, YES_EBO, in_color));
 
         indices.push_back(0); indices.push_back(4); indices.push_back(1);
-        info_faces.push_back(IndicesInfo(9, 3, GL_TRIANGLES, true, in_color));
+        info_faces.push_back(IndicesInfo(9, 3, GL_TRIANGLES, YES_EBO, in_color));
 
         
         // Base 
         indices.push_back(1); indices.push_back(2); indices.push_back(3);
         indices.push_back(1); indices.push_back(3); indices.push_back(4);
-        info_faces.push_back(IndicesInfo(12, 6, GL_TRIANGLES, true, in_color));
+        info_faces.push_back(IndicesInfo(12, 6, GL_TRIANGLES, YES_EBO, in_color));
     }
 
     void add_points(Color* in_color) override
@@ -417,7 +423,31 @@ private:
 
 
         for (int i = 0; i < v_count; i++)
-            info_points.push_back(IndicesInfo(i, 1, GL_POINTS, false, in_color));
+            info_points.push_back(IndicesInfo(i, 1, GL_POINTS, NO_EBO, in_color));
+    }
+
+    void add_edges(Color* in_color) override
+    {
+        int s_indice = indices.size();
+
+        // Front
+        indices.push_back(0); indices.push_back(1);
+        indices.push_back(0); indices.push_back(2);
+        indices.push_back(1); indices.push_back(2);
+
+        // Back
+        indices.push_back(0); indices.push_back(4);
+        indices.push_back(0); indices.push_back(3);
+        indices.push_back(4); indices.push_back(3);
+
+        // Right
+        indices.push_back(2); indices.push_back(3);
+
+        // Left
+        indices.push_back(1); indices.push_back(4);
+
+        for (int i = 0; i < 8; i++)
+            info_edges.push_back(IndicesInfo(s_indice + (2 * i), 2, GL_LINES, YES_EBO, in_color));
     }
 };
 
@@ -438,8 +468,11 @@ public:
     {
         create_cube(&base_color);
 
+        if(has_edges)
+            add_edges(&base_color);
         if(has_points)
             add_points(&base_color);
+
     }
 private:
     float size;
@@ -466,32 +499,32 @@ private:
         // Front
         indices.push_back(0); indices.push_back(1); indices.push_back(2);
 		indices.push_back(0); indices.push_back(2); indices.push_back(3);
-        info_faces.push_back(IndicesInfo(0, 6, GL_TRIANGLES, true, in_color));
+        info_faces.push_back(IndicesInfo(0, 6, GL_TRIANGLES, YES_EBO, in_color));
 
         // Back
         indices.push_back(5); indices.push_back(4); indices.push_back(7);
 		indices.push_back(5); indices.push_back(7); indices.push_back(6);
-        info_faces.push_back(IndicesInfo(6, 6, GL_TRIANGLES, true, in_color));
+        info_faces.push_back(IndicesInfo(6, 6, GL_TRIANGLES, YES_EBO, in_color));
 
         // Left
         indices.push_back(4); indices.push_back(0); indices.push_back(3);
 		indices.push_back(4); indices.push_back(3); indices.push_back(7);
-        info_faces.push_back(IndicesInfo(12, 6, GL_TRIANGLES, true, in_color));
+        info_faces.push_back(IndicesInfo(12, 6, GL_TRIANGLES, YES_EBO, in_color));
 
         // Right
         indices.push_back(1); indices.push_back(5); indices.push_back(6);
 		indices.push_back(1); indices.push_back(6); indices.push_back(2);
-        info_faces.push_back(IndicesInfo(18, 6, GL_TRIANGLES, true, in_color));
+        info_faces.push_back(IndicesInfo(18, 6, GL_TRIANGLES, YES_EBO, in_color));
 
         // Top
         indices.push_back(3); indices.push_back(2); indices.push_back(6);
 		indices.push_back(3); indices.push_back(6); indices.push_back(7);
-        info_faces.push_back(IndicesInfo(24, 6, GL_TRIANGLES, true, in_color));
+        info_faces.push_back(IndicesInfo(24, 6, GL_TRIANGLES, YES_EBO, in_color));
 
         // Bottom
         indices.push_back(4); indices.push_back(5); indices.push_back(1);
 		indices.push_back(4); indices.push_back(1); indices.push_back(0);
-        info_faces.push_back(IndicesInfo(30, 6, GL_TRIANGLES, true, in_color));
+        info_faces.push_back(IndicesInfo(30, 6, GL_TRIANGLES, YES_EBO, in_color));
     }
 
     void add_points(Color* in_color) override
@@ -500,7 +533,35 @@ private:
 
 
         for (int i = 0; i < v_count; i++)
-            info_points.push_back(IndicesInfo (i, 1, GL_POINTS, false, in_color));
+            info_points.push_back(IndicesInfo (i, 1, GL_POINTS, NO_EBO, in_color));
+    }
+
+    void add_edges(Color* in_color) override
+    {
+        int s_indice = indices.size();
+        std::cout << "S_INDICE: " << s_indice << "\n";
+        // Front
+        indices.push_back(0); indices.push_back(1);
+        indices.push_back(1); indices.push_back(2);
+        indices.push_back(2); indices.push_back(3);
+        indices.push_back(3); indices.push_back(0);
+
+        // Back
+        indices.push_back(4); indices.push_back(5);
+        indices.push_back(5); indices.push_back(6);
+        indices.push_back(6); indices.push_back(7);
+        indices.push_back(7); indices.push_back(4);
+
+        // Right
+        indices.push_back(1); indices.push_back(5);
+        indices.push_back(2); indices.push_back(6);
+
+        // Left
+        indices.push_back(0); indices.push_back(4);
+        indices.push_back(3); indices.push_back(7);
+
+        for (int i = 0; i < 12; i++)
+            info_edges.push_back(IndicesInfo (s_indice + (2 * i), 2, GL_LINES, YES_EBO, in_color));
     }
 };
 
@@ -522,6 +583,11 @@ public:
               in_has_points), height(in_height), radius(in_radius), points(in_points)
     {
         create_cone(&base_color);
+
+        if (has_edges)
+            add_edges(&base_color);
+        if (has_points)
+            add_points(&base_color);
     }
 private:
     float height, radius;
@@ -556,7 +622,7 @@ private:
             indices.push_back(i);
             indices.push_back(i + 1);
         }
-        info_faces.push_back(IndicesInfo(0, points * 3, GL_TRIANGLES, true, in_color));
+        info_faces.push_back(IndicesInfo(0, points * 3, GL_TRIANGLES, YES_EBO, in_color));
 
         // Base
         unsigned int base_start = points * 3;
@@ -566,7 +632,17 @@ private:
             indices.push_back(i + 1);
             indices.push_back(i);
         }
-        info_faces.push_back(IndicesInfo(base_start, points * 3, GL_TRIANGLES, true, in_color));
+        info_faces.push_back(IndicesInfo(base_start, points * 3, GL_TRIANGLES, YES_EBO, in_color));
+    }
+
+    void add_edges(Color* in_color) override
+    {
+        info_edges.push_back(IndicesInfo(1, points, GL_LINE_LOOP, NO_EBO, in_color));
+    }
+
+    void add_points(Color* in_color) override
+    {
+        info_points.push_back(IndicesInfo(0, 1, GL_POINTS, NO_EBO, in_color));
     }
 
 };
@@ -632,7 +708,14 @@ private:
             }
         }
 
-        info_faces.push_back(IndicesInfo(0, points * points * 6, GL_TRIANGLES, true, in_color));
+        int section_num = 8;
+        int total_size = points * points;
+        int batch_size = total_size / section_num;
+
+        for (int i = 0; i < section_num - 1; i++)
+            info_faces.push_back(IndicesInfo(i * batch_size * 6, batch_size * 6, GL_TRIANGLES, YES_EBO, in_color));
+
+        info_faces.push_back(IndicesInfo((section_num - 1) * batch_size * 6, (total_size - ((section_num - 1) * batch_size)) * 6, GL_TRIANGLES, YES_EBO, in_color));
     }
 };
 
