@@ -67,7 +67,10 @@ void scale(float factor)
 	{
 		if (m_i->id != current_id)
 			continue;
+
+        m_i->model.traslate(-m_i->c_x, -m_i->c_y, -m_i->c_z);
 		m_i->model.scale(factor, factor, factor);
+        m_i->model.traslate(m_i->c_x, m_i->c_y, m_i->c_z);
 	}
 }
 
@@ -164,8 +167,8 @@ void key_call_back(GLFWwindow* in_window, int key, int scan_code, int action, in
         animations.add_animation(1, {AnimationInfo(1, -0.5, "SCALE_X"),
                                      AnimationInfo(1, 0.2, "SCALE_Y")},
                                      45);
-        
 
+        // Trompo
         animations.add_animation(4, {AnimationInfo(2, 90, "ROTATE_C_Y")}, 60);
         animations.add_animation(4, {AnimationInfo(2, 90, "ROTATE_C_Y")}, 60);
         animations.add_animation(4, {AnimationInfo(2, 90, "ROTATE_C_Y")}, 60);
@@ -327,20 +330,29 @@ int main()
     Color purple(157.0f, 0.0f, 255.0f, true);
     Color golden(225.0f, 190.0f, 150.0f, true);
     Color le_lime(133.0f, 235.0f, 52.0f, true);
+    Color red(255.0f, 0.0f, 0.0f, true);
+    Color white(255.0f, 255.0f, 255.0f, true);
 
     // Figuras
 
     std::vector<float> vertices;
     std::vector<unsigned int> indices;
 
-	
-    Rectangle floor(0.5f, 2.0f, 0.0f, 0.0f, true);
+
+    Cube floor(0.5f, 0.0f, -0.5f, -0.0f, true, true);
 	floor.id = 0;
     floor.set_face_color(0, &golden);
+    floor.set_face_color(1, &golden);
+    floor.set_face_color(2, &golden);
+    floor.set_face_color(3, &golden);
+    floor.set_face_color(4, &golden);
+    floor.set_face_color(5, &golden);
 	
-    Cube cubeA(0.2, -0.5, 0.0f, 0.0f, true);
+    Cube cubeA(0.2, -0.5, 0.0f, 0.0f,
+                                    true, true, true);
 	cubeA.id = 1;
 	
+
 	cubeA.set_face_color(2, &pink);      // Front
 	
 	cubeA.set_face_color(1, &lava);      // Back
@@ -349,22 +361,37 @@ int main()
 	cubeA.set_face_color(4, &purple);    // Top
 	cubeA.set_face_color(5, &golden);    // Bottom
 	
+	cubeA.set_edge_color(0, &white);
+    cubeA.set_edge_color(2, &white);
+    cubeA.set_edge_color(4, &white);
+    cubeA.set_edge_color(6, &white);
+    cubeA.set_edge_color(8, &white);
+    cubeA.set_edge_color(10, &white);
 	
-	
-	Pyramid pyrA(0.2, 0.1, 0.5f, 0.5f, 0.0f, true);
+	Pyramid pyrA(0.2, 0.1, 0.5f, 0.5f, 0.0f, true, true, true);
 	pyrA.id = 2;
 	pyrA.set_face_color(0, &pink);
-	pyrA.set_face_color(1, &turquesa);
-	
-	pyrA.set_face_color(2, &lava);
+	pyrA.set_face_color(1, &lava);
+	pyrA.set_face_color(2, &radioactive);
+    pyrA.set_face_color(3, &le_lime);
+    pyrA.set_face_color(4, &red);
 	
 	
 	Sphere sphA(40, 0.1, 0.0, 0.0, 0.0, true);
 	sphA.id = 3;
+    sphA.set_face_color(0, &pink);
+	sphA.set_face_color(1, &lava);
+	sphA.set_face_color(2, &radioactive);
+    sphA.set_face_color(3, &le_lime);
+    sphA.set_face_color(4, &red);
+    sphA.set_face_color(5, &white);
+    sphA.set_face_color(6, &le_lime);
+    sphA.set_face_color(7, &red);
+
 
     Cone conA(40, 0.2f, 0.1f,
               0.3f, 0.3f, 0.0f,
-              true);
+              true, true, true);
     conA.id = 4;
     conA.set_face_color(0, &le_lime);
 	conA.set_face_color(1, &turquesa);
