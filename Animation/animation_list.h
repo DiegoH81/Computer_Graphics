@@ -4,7 +4,10 @@
 #include <queue>
 #include <string>
 
+
+#include "camera.h"
 #include "shape.h"
+#include "utils.h"
 
 
 class AnimationInfo
@@ -23,11 +26,11 @@ class AnimationBlock
 {
 public:
     std::vector<AnimationInfo> transforms;
-    int remaining_frames;
+    float remaining_time;
 
     AnimationBlock(const std::vector<AnimationInfo>& in_transforms,
-                   const int& in_remaining_frames):
-        transforms(in_transforms), remaining_frames(in_remaining_frames)
+                   const float& in_remaining_time):
+        transforms(in_transforms), remaining_time(in_remaining_time)
         {}
 };
 
@@ -35,19 +38,19 @@ class AnimationList
 {
 public:
 
-    void add_animation(int in_id, const std::vector<AnimationInfo>& animation_sequence, int frames)
+    void add_animation(const std::vector<AnimationInfo>& animation_sequence, const float& seconds)
     {
         std::vector<AnimationInfo> transformations;
         for (auto &a: animation_sequence)
         {
-            float step = a.move/float(frames);
-            transformations.push_back(AnimationInfo(in_id, step, a.type));
+            float step = a.move / seconds;
+            transformations.push_back(AnimationInfo(a.id, step, a.type));
         }
 
-        animation_queue.push(AnimationBlock(transformations, frames));
+        animation_queue.push(AnimationBlock(transformations, seconds));
     }
 
-    void process_animations(std::vector<Shape*>& in_info)
+    void process_animations(std::vector<Shape*>& in_info, const float& in_delta_time)
     {
         if (animation_queue.empty())
             return;
@@ -58,71 +61,91 @@ public:
 
         for (auto& t: transforms)
         {
-            for (auto &i : in_info)
+            for (auto &shape : in_info)
             {
-				if (i->id != t.id)
+				if (shape->id != t.id && t.id != ALL_IDs)
 					continue;
 				
 				auto &type = t.type;
+                float move = t.move * in_delta_time;
 
 				if (type == "MOVE_X")
-				{
-					i->model.traslate(t.move, 0.0f, 0.0f);
-					i->c_x += t.move;
-				}
+					shape->traslate(Vector3(move, 0.0f, 0.0f));
 				else if (type == "MOVE_Y")
-				{
-					i->model.traslate(0.0f, t.move, 0.0f);
-					i->c_y += t.move;
-				}
-				else if (type == "ROTATE_X")
-					i->model.rotate_x(t.move);
-				else if (type == "ROTATE_Y")
-					i->model.rotate_y(t.move);
-				else if (type == "ROTATE_Z")
-					i->model.rotate_z(t.move);
+					shape->traslate(Vector3(0.0f, move, 0.0f));
+                else if (type == "MOVE_Z")
+					shape->traslate(Vector3(0.0f, 0.0f, move));
 				else if (type == "ROTATE_C_X")
-				{
-					i->model.traslate(-i->c_x, -i->c_y, -i->c_z);
-					i->model.rotate_x(t.move);
-					i->model.traslate(i->c_x, i->c_y, i->c_z);
-				}
+                    shape->rotate_x(move);
 				else if (type == "ROTATE_C_Y")
-				{
-					i->model.traslate(-i->c_x, -i->c_y, -i->c_z);
-					i->model.rotate_y(t.move);
-					i->model.traslate(i->c_x, i->c_y, i->c_z);
-				}
+                    shape->rotate_y(move);
 				else if (type == "ROTATE_C_Z")
-				{
-					i->model.traslate(-i->c_x, -i->c_y, -i->c_z);
-					i->model.rotate_z(t.move);
-					i->model.traslate(i->c_x, i->c_y, i->c_z);
-				}
+				    shape->rotate_z(move);
 				else if (type == "SCALE_X")
-                {
-                    i->model.traslate(-i->c_x, -i->c_y, -i->c_z);
-					i->model.scale(1.0f + t.move, 1.0f, 1.0f);
-                    i->model.traslate(i->c_x, i->c_y, i->c_z);
-                }
+                    shape->scale(Vector3(1.0f + move, 1.0f, 1.0f));
                 else if (type == "SCALE_Y")
-                {
-                    i->model.traslate(-i->c_x, -i->c_y, -i->c_z);
-					i->model.scale(1.0f, 1.0f + t.move, 1.0f);
-                    i->model.traslate(i->c_x, i->c_y, i->c_z);
-                }
+                    shape->scale(Vector3(1.0f, 1.0f + move, 1.0f));
                 else if (type == "SCALE_Z")
-                {
-                    i->model.traslate(-i->c_x, -i->c_y, -i->c_z);
-					i->model.scale(1.0f, 1.0f, 1.0f + t.move);
-                    i->model.traslate(i->c_x, i->c_y, i->c_z);
-                }
-                
+                    shape->scale(Vector3(1.0f, 1.0f, 1.0f + move));
             }
         }
 
-        top.remaining_frames--;
-        if (top.remaining_frames <= 0)
+        top.remaining_time -= in_delta_time;
+        if (top.remaining_time <= 0)
+            animation_queue.pop();
+    }
+
+    void process_animations_camera(Camera& in_camera, std::vector<Shape*>& in_info, const float& in_delta_time)
+    {
+        if (animation_queue.empty())
+            return;
+
+        auto &top = animation_queue.front();
+        auto &transforms = top.transforms;
+        
+
+        for (auto& t: transforms)
+        {
+            auto &type = t.type;
+            float move = t.move * in_delta_time;
+
+            if (type == "MOVE_X")
+                in_camera.traslate(Vector3(move, 0.0f, 0.0f));
+            else if (type == "MOVE_Y")
+                in_camera.traslate(Vector3(0.0f, move, 0.0f));
+            else if (type == "MOVE_Z")
+                in_camera.traslate(Vector3(0.0f, 0.0f, move));
+
+            if (t.id == ALL_IDs)
+                continue;
+
+            for (auto &shape : in_info)
+            {
+				if (shape->id != t.id)
+					continue;
+
+				if (type == "ORBIT_X")
+                {
+                    in_camera.set_objective(shape->center);
+                    in_camera.orbit_x(move);
+                }
+				else if (type == "ORBIT_Y")
+                {
+                    in_camera.set_objective(shape->center);
+                    in_camera.orbit_y(move);
+                }
+				else if (type == "ORBIT_Z")
+				{
+                    in_camera.set_objective(shape->center);
+                    in_camera.orbit_z(move);
+                }
+
+                break;
+            }
+        }
+
+        top.remaining_time -= in_delta_time;
+        if (top.remaining_time <= 0)
             animation_queue.pop();
     }
 

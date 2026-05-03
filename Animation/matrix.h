@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "utils.h"
+#include "vector.h"
 
 class Matrix_4
 {
@@ -72,24 +73,24 @@ public:
         matrix = in_mat;
     }
 
-    void scale(float s_x, float s_y, float s_z)
+    void scale(const Vector3& in_s)
     {
         Matrix_4 mat;
-        mat.set_matrix({ s_x,   0,   0,   0,
-                          0 , s_y,   0,   0,
-                          0 ,   0, s_z,   0,
-                          0 ,   0,   0,   1   });
+        mat.set_matrix({ in_s.x,      0,      0,   0,
+                              0, in_s.y,      0,   0,
+                              0,      0, in_s.z,   0,
+                              0,      0,      0,   1   });
 
         *this = mat * (*this);
     }
 
-    void traslate(float m_x, float m_y, float m_z)
+    void traslate(const Vector3& in_m)
     {
         Matrix_4 mat;
-        mat.set_matrix({ 1, 0, 0, m_x,
-                         0, 1, 0, m_y,
-                         0, 0, 1, m_z,
-                         0, 0, 0,   1   });
+        mat.set_matrix({ 1, 0, 0, in_m.x,
+                         0, 1, 0, in_m.y,
+                         0, 0, 1, in_m.z,
+                         0, 0, 0,      1 });
 
         *this = mat * (*this);
     }
@@ -155,5 +156,30 @@ public:
         matrix = temp;
     }
 };
+
+
+Matrix_4 get_perspective(const float& in_y_fov,
+                         const float& in_aspect_ratio,
+                         const float& in_near, const float& in_far)
+{
+    Matrix_4 to_return;
+
+    float ang = utils::ang_to_rad(in_y_fov);
+
+    float top = std::tan(ang / 2.0f) * in_near;
+    float right = top * in_aspect_ratio;
+
+    float A = -(in_far + in_near)/(in_far - in_near);
+    float B = (-2 * in_far * in_near)/(in_far - in_near);
+
+    to_return.set_matrix({ in_near/right,        0.0f, 0.0f, 0.0f,
+                                    0.0f, in_near/top, 0.0f, 0.0f,
+                                    0.0f,        0.0f,    A,    B,
+                                    0.0f,        0.0f, -1.0f, 0.0f });
+
+    
+
+    return to_return;
+}
 
 #endif

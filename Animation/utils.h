@@ -1,7 +1,10 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#define ALL_IDs -1
+
 #include <cmath>
+
 
 #define PI 3.14159265359
 

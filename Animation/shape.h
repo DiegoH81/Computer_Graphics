@@ -9,6 +9,8 @@
 #include "matrix.h"
 #include "utils.h"
 #include "indices_info.h"
+#include "vector.h"
+
 
 Color base_color(70, 130, 180, true);
 
@@ -16,10 +18,9 @@ class Shape
 {
 public:
 	int id;
-    Matrix_4 model;
     bool has_faces, has_edges, has_points;
 
-    float c_x, c_y, c_z;
+    Point3 center;
 
     std::vector <float> vertices;
     std::vector <unsigned int> indices;
@@ -28,16 +29,12 @@ public:
                               info_edges,
                               info_points;
 
-    Shape(const float& in_cx = 0.0f, const float& in_cy = 0.0f, const float& in_cz = 0.0f,
+    Shape():
+        vertices(), indices(), center(),
 
-         const bool& in_has_faces = false,
-         const bool& in_has_edges = false,
-         const bool& in_has_points = false):
-        vertices(), indices(), c_x(in_cx), c_y(in_cy), c_z(in_cz),
-
-        has_faces(in_has_faces),
-        has_edges(in_has_edges),
-        has_points(in_has_points),
+        has_faces(false),
+        has_edges(false),
+        has_points(false),
 
         model(),
 
@@ -70,7 +67,6 @@ public:
             {
 				auto &color = edge.color;
 				shaders.set_vec3("UNIQUE", "color", color->r, color->g, color->b);
-				shaders.set_mat4("UNIQUE", "model", model);
 				
                 if (!edge.uses_EBO)
                     glDrawArrays(edge.draw_mode, edge.start_indice, edge.count);
@@ -85,7 +81,6 @@ public:
             {
 				auto &color = point.color;
 				shaders.set_vec3("UNIQUE", "color", color->r, color->g, color->b);
-				shaders.set_mat4("UNIQUE", "model", model);
 				
                 if (!point.uses_EBO)
                     glDrawArrays(point.draw_mode, point.start_indice, point.count);
@@ -97,53 +92,108 @@ public:
 
     void set_face_color(int in_id, Color* in_color)
     {
-        if (in_id < 0 || in_id >= info_faces.size() || in_color == nullptr)
+        if (in_id == ALL_IDs)
+        {
+            for (auto &f : info_faces)
+                f.color = in_color;
+			return;
+        }
+		if (in_id < 0 || in_id >= info_faces.size() || in_color == nullptr)
             return;
-
-        info_faces[in_id].color = in_color;
+        
+		info_faces[in_id].color = in_color;
     }
 
     void set_edge_color(int in_id, Color* in_color)
     {
-        if (in_id < 0 || in_id >= info_edges.size() || in_color == nullptr)
+        if (in_id == ALL_IDs)
+        {
+            for (auto &e : info_edges)
+                e.color = in_color;
+			return;
+        }
+		if (in_id < 0 || in_id >= info_edges.size() || in_color == nullptr)
             return;
-
         info_edges[in_id].color = in_color;
     }
 
     void set_point_color(int in_id, Color* in_color)
     {
+        if (in_id == ALL_IDs)
+        {
+            for (auto &p : info_points)
+                p.color = in_color;
+			return;
+        }
         if (in_id < 0 || in_id >= info_points.size() || in_color == nullptr)
             return;
-
-        info_points[in_id].color = in_color;
+		info_points[in_id].color = in_color;
     }
 
-    virtual ~Shape() = default;
+    void traslate(const Vector3& in_m)
+    {
+        model.traslate(in_m);
+        center = center + in_m;
+    }
 
+    void scale(const Vector3& in_s)
+    {
+        model.traslate(-center);
+        model.scale(in_s);
+        model.traslate(center);
+    }
+
+    void rotate_x(float in_angle)
+    {
+        model.traslate(-center);
+        model.rotate_x(in_angle);
+        model.traslate(center);
+    }
+
+    void rotate_y(float in_angle)
+    {
+        model.traslate(-center);
+        model.rotate_y(in_angle);
+        model.traslate(center);
+    }
+
+    void rotate_z(float in_angle)
+    {
+        model.traslate(-center);
+        model.rotate_z(in_angle);
+        model.traslate(center);
+    }
+
+    virtual void add_edges(Color *in_color = &base_color) {};
+    virtual void add_points(Color *in_color = &base_color) {};
+    void add_faces(Color *in_color = &base_color)
+    {
+        has_faces = true;
+        for (auto &f : info_faces)
+            f.color = in_color;
+    }
 protected:
-    virtual void add_edges(Color *in_color) {};
-    virtual void add_points(Color *in_color) {};
+    Matrix_4 model;
+    
 };
 
 
 class Circle : public Shape
 {
 public:
-    Circle(const unsigned int& in_points, const float& in_radius = 1.0f,
-           const float& in_cx = 0.0f, const float& in_cy = 0.0f,
-           const bool& in_has_faces = false,
-           const bool& in_has_edges = false
-        
-        ):
-        n_points(in_points), radius(in_radius), Shape(in_cx, in_cy, 0.0f,
-                                                      in_has_faces,
-                                                      in_has_edges)
+    Circle(const unsigned int& in_points, const float& in_radius = 1.0f)
+    : n_points(in_points), radius(in_radius), Shape()
     {
         create_circle(&base_color);
+    }
 
-        if (has_edges)
-            add_edges(&base_color);
+    void add_edges(Color* in_color = &base_color) override
+    {
+        has_edges = true;
+
+        int v_count = (vertices.size() / 3) - 1;
+
+        info_edges.push_back(IndicesInfo(1, v_count, GL_LINE_LOOP, NO_EBO, in_color));
     }
 
 private:
@@ -154,26 +204,19 @@ private:
     {
         float step = 360.0 / float(n_points);
         
-        vertices.push_back(c_x); vertices.push_back(c_y); vertices.push_back(0.0f);
+        vertices.push_back(center.x); vertices.push_back(center.y); vertices.push_back(0.0f);
 
         for (int i = 0; i <= n_points; i++)
         {
             float ang = utils::ang_to_rad(i * step);
-            float x = c_x + radius * std::cos(ang);
-            float y = c_y + radius * std::sin(ang);
+            float x = center.x + radius * std::cos(ang);
+            float y = center.y + radius * std::sin(ang);
             
             vertices.push_back(x); vertices.push_back(y); vertices.push_back(0.0f);
         }
 
         int v_count = vertices.size() / 3;
         info_faces.push_back(IndicesInfo(0, v_count, GL_TRIANGLE_FAN, NO_EBO, in_color));
-    }
-
-    void add_edges(Color* in_color) override
-    {
-        int v_count = (vertices.size() / 3) - 1;
-
-        info_edges.push_back(IndicesInfo(1, v_count, GL_LINE_LOOP, NO_EBO, in_color));
     }
 };
 
@@ -186,21 +229,22 @@ public:
                     const float& in_radius = 1.0f,
 					
                     const float& in_ox = 0.0f,
-                    const float& in_oy = 0.0f,
-					const bool& in_has_faces = false,
-                    const bool& in_has_edges = false):
+                    const float& in_oy = 0.0f):
         n_points(in_points), radius(in_radius), start_angle(in_start), end_angle(in_end),
-        Shape(0.0f, 0.0f, 0.0f, 
-              in_has_faces,
-              in_has_edges )
+        Shape()
     {
-        create_sector(in_ox, in_oy, &base_color);        
-
-        if (has_edges)
-            add_edges(&base_color);
+        create_sector(in_ox, in_oy, &base_color);
     }
 
-    
+    void add_edges(Color* in_color = &base_color) override
+    {
+        has_edges = true;
+
+        int v_count = vertices.size() / 3;
+
+        info_edges.push_back(IndicesInfo(0, v_count, GL_LINE_LOOP, NO_EBO, in_color));
+    }
+
 private:
     unsigned int n_points;
     float radius, start_angle, end_angle;
@@ -225,44 +269,42 @@ private:
         float mid_radius = radius / 2.0f;
 
         float ang = utils::ang_to_rad(mid_angle);
-        c_x = in_ox + mid_radius * std::cos(ang);
-        c_y = in_oy + mid_radius * std::sin(ang);
+        center.x = in_ox + mid_radius * std::cos(ang);
+        center.y = in_oy + mid_radius * std::sin(ang);
 
 
 
         int v_count = vertices.size() / 3;
         info_faces.push_back(IndicesInfo(0, v_count, GL_TRIANGLE_FAN, NO_EBO, in_color));
-    }
-
-    void add_edges(Color* in_color) override
-    {
-        int v_count = vertices.size() / 3;
-
-        info_edges.push_back(IndicesInfo(0, v_count, GL_LINE_LOOP, NO_EBO, in_color));
-    }
+    }    
 };
 
 class Rectangle : public Shape
 {
 public:
-    Rectangle(const float& in_height,
-              const float& in_width,
-              const float& in_cx = 0.0f,
-              const float& in_cy = 0.0f,
-              const bool& in_has_faces = false,
-              const bool& in_has_edges = false,
-              const bool& in_has_points = false):
-        Shape(in_cx, in_cy, 0.0f,
-              in_has_faces,
-              in_has_edges,
-              in_has_points)
+    Rectangle(const float& in_height, const float& in_width)
+        : Shape()
     {
         create_rectangle(in_height, in_width, &base_color);
+    }
 
-        if (has_edges)
-            add_edges(&base_color);
-        if (has_points)
-            add_points(&base_color);
+    void add_edges(Color* in_color = &base_color) override
+    {
+        has_edges = true;
+
+        int v_count = vertices.size() / 3;
+
+        info_edges.push_back(IndicesInfo(0, v_count, GL_LINE_LOOP, NO_EBO, in_color));
+    }
+
+    void add_points(Color* in_color = &base_color) override
+    {
+        has_points = true;
+
+        int v_count = vertices.size() / 3;
+
+        for (int i = 0; i < v_count; i++)
+            info_points.push_back(IndicesInfo(i, 1, GL_POINTS, NO_EBO, in_color));
     }
 
 private:
@@ -279,29 +321,14 @@ private:
 
         for (int i = 0; i < 4; i++)
         {
-            vertices.push_back(l_x[i] + c_x); vertices.push_back(l_y[i] + c_y); vertices.push_back(0.0f);
+            vertices.push_back(l_x[i] + center.x);
+            vertices.push_back(l_y[i] + center.y);
+            vertices.push_back(0.0f);
         }
 
         int v_count = vertices.size() / 3;
         info_faces.push_back(IndicesInfo(0, v_count, GL_TRIANGLE_FAN, NO_EBO, in_color));
     }
-
-
-    void add_edges(Color* in_color) override
-    {
-        int v_count = vertices.size() / 3;
-
-        info_edges.push_back(IndicesInfo(0, v_count, GL_LINE_LOOP, NO_EBO, in_color));
-    }
-
-    void add_points(Color* in_color) override
-    {
-        int v_count = vertices.size() / 3;
-
-        for (int i = 0; i < v_count; i++)
-            info_points.push_back(IndicesInfo(i, 1, GL_POINTS, NO_EBO, in_color));
-    }
-
 };
 
 class Elipse : public Shape
@@ -309,27 +336,24 @@ class Elipse : public Shape
 public:
     Elipse(const unsigned int& in_points,
            const float& in_height,
-           const float& in_width,
-           const float& in_cx = 0.0f,
-           const float& in_cy = 0.0f,
-           const bool& in_has_faces = false,
-           const bool& in_has_edges = false):
-        Shape(in_cx, in_cy, 0.0f,
-
-              in_has_faces,
-              in_has_edges)
+           const float& in_width)
+           : Shape()
     {
         create_elipse(in_height, in_width, in_points, &base_color);
-        
-        if (has_edges)
-            add_edges(&base_color);
-
     }
 
+    void add_edges(Color* in_color = &base_color) override
+    {
+        has_edges = true;
+
+        int v_count = (vertices.size() / 3) - 1;
+
+        info_edges.push_back(IndicesInfo(1, v_count, GL_LINE_LOOP, NO_EBO, in_color));
+    }
 private:
     void create_elipse(float in_height, float in_width, int in_points, Color *in_color)
     {
-        vertices.push_back(c_x); vertices.push_back(c_y); vertices.push_back(0.0f);
+        vertices.push_back(center.x); vertices.push_back(center.y); vertices.push_back(0.0f);
 
         float step = 360.0 / float(in_points);
 
@@ -340,85 +364,29 @@ private:
             float x = std::cos(ang_step) * in_width;
             float y = std::sin(ang_step) * in_height;
 
-            vertices.push_back(c_x + x); vertices.push_back(c_y + y); vertices.push_back(0.0f);
+            vertices.push_back(center.x + x);
+            vertices.push_back(center.y + y);
+            vertices.push_back(0.0f);
         }
 
         int v_count = vertices.size() / 3;
         info_faces.push_back(IndicesInfo(0, v_count, GL_TRIANGLE_FAN, NO_EBO, in_color));
-    }
-
-    void add_edges(Color* in_color) override
-    {
-        int v_count = (vertices.size() / 3) - 1;
-
-        info_edges.push_back(IndicesInfo(1, v_count, GL_LINE_LOOP, NO_EBO, in_color));
     }
 };
 
 class Pyramid : public Shape
 {
 public:
-    Pyramid(const float& in_height,
-            const float& in_base,
-            const float& in_cx = 0.0f,
-            const float& in_cy = 0.0f,
-            const float& in_cz = 0.0f,
-            const bool& in_has_faces = false,
-            const bool& in_has_edges = false,
-            const bool& in_has_points = false):
-        Shape(in_cx, in_cy, in_cz,
-             in_has_faces,
-             in_has_edges,
-             in_has_points), height(in_height), base(in_base)
+    Pyramid(const float& in_height, const float& in_base)
+        : Shape(), height(in_height), base(in_base)
     {
         create_pyramid(&base_color);
-        
-
-        if (has_edges)
-            add_edges(&base_color);
-        if (has_points)
-            add_points(&base_color);
     }
 
-private:
-    float height, base;
-
-    void create_pyramid(Color *in_color)
+    void add_points(Color* in_color = &base_color) override
     {
-        float h = height / 2.0f;
-        float b = base  / 2.0f;
-
-        // Apex
-        vertices.push_back(c_x);       vertices.push_back(c_y + h);  vertices.push_back(c_z);
-
-        // FL FR BR BL
-        vertices.push_back(c_x - b);   vertices.push_back(c_y - h);  vertices.push_back(c_z + b);
-        vertices.push_back(c_x + b);   vertices.push_back(c_y - h);  vertices.push_back(c_z + b);
-        vertices.push_back(c_x + b);   vertices.push_back(c_y - h);  vertices.push_back(c_z - b);
-        vertices.push_back(c_x - b);   vertices.push_back(c_y - h);  vertices.push_back(c_z - b);
-
-        // Faces
-        indices.push_back(0); indices.push_back(1); indices.push_back(2);
-        info_faces.push_back(IndicesInfo(0, 3, GL_TRIANGLES, YES_EBO, in_color));
-
-        indices.push_back(0); indices.push_back(2); indices.push_back(3);
-        info_faces.push_back(IndicesInfo(3, 3, GL_TRIANGLES, YES_EBO, in_color));
-
-        indices.push_back(0); indices.push_back(3); indices.push_back(4);
-        info_faces.push_back(IndicesInfo(6, 3, GL_TRIANGLES, YES_EBO, in_color));
-
-        indices.push_back(0); indices.push_back(4); indices.push_back(1);
-        info_faces.push_back(IndicesInfo(9, 3, GL_TRIANGLES, YES_EBO, in_color));
-
+        has_points = true;
         
-        // Base 
-        indices.push_back(1); indices.push_back(2); indices.push_back(3);
-        indices.push_back(1); indices.push_back(3); indices.push_back(4);
-        info_faces.push_back(IndicesInfo(12, 6, GL_TRIANGLES, YES_EBO, in_color));
-    }
-
-    void add_points(Color* in_color) override
-    {
         int v_count = vertices.size() / 3;
 
 
@@ -426,8 +394,10 @@ private:
             info_points.push_back(IndicesInfo(i, 1, GL_POINTS, NO_EBO, in_color));
     }
 
-    void add_edges(Color* in_color) override
+    void add_edges(Color* in_color = &base_color) override
     {
+        has_edges = true;
+
         int s_indice = indices.size();
 
         // Front
@@ -449,30 +419,94 @@ private:
         for (int i = 0; i < 8; i++)
             info_edges.push_back(IndicesInfo(s_indice + (2 * i), 2, GL_LINES, YES_EBO, in_color));
     }
+private:
+    float height, base;
+
+    void create_pyramid(Color *in_color)
+    {
+        float h = height / 2.0f;
+        float b = base  / 2.0f;
+
+        // Top
+        vertices.push_back(center.x);
+        vertices.push_back(center.y + h); 
+        vertices.push_back(center.z);
+
+        // FL FR BR BL
+        vertices.push_back(center.x - b);   vertices.push_back(center.y - h);  vertices.push_back(center.z + b);
+        vertices.push_back(center.x + b);   vertices.push_back(center.y - h);  vertices.push_back(center.z + b);
+        vertices.push_back(center.x + b);   vertices.push_back(center.y - h);  vertices.push_back(center.z - b);
+        vertices.push_back(center.x - b);   vertices.push_back(center.y - h);  vertices.push_back(center.z - b);
+
+        // Faces
+        indices.push_back(0); indices.push_back(1); indices.push_back(2);
+        info_faces.push_back(IndicesInfo(0, 3, GL_TRIANGLES, YES_EBO, in_color));
+
+        indices.push_back(0); indices.push_back(2); indices.push_back(3);
+        info_faces.push_back(IndicesInfo(3, 3, GL_TRIANGLES, YES_EBO, in_color));
+
+        indices.push_back(0); indices.push_back(3); indices.push_back(4);
+        info_faces.push_back(IndicesInfo(6, 3, GL_TRIANGLES, YES_EBO, in_color));
+
+        indices.push_back(0); indices.push_back(4); indices.push_back(1);
+        info_faces.push_back(IndicesInfo(9, 3, GL_TRIANGLES, YES_EBO, in_color));
+
+        
+        // Base 
+        indices.push_back(1); indices.push_back(2); indices.push_back(3);
+        indices.push_back(1); indices.push_back(3); indices.push_back(4);
+        info_faces.push_back(IndicesInfo(12, 6, GL_TRIANGLES, YES_EBO, in_color));
+    }
 };
 
 class Cube : public Shape
 {
 public:
-    Cube(const float& in_size,
-         const float& in_cx = 0.0f,
-         const float& in_cy = 0.0f,
-         const float& in_cz = 0.0f,
-         const bool& in_has_faces = false,
-         const bool& in_has_edges = false,
-         const bool& in_has_points = false):
-        Shape(in_cx, in_cy, in_cz,
-              in_has_faces,
-              in_has_edges,
-              in_has_points), size(in_size)
+    Cube(const float& in_size):
+        Shape(), size(in_size)
     {
         create_cube(&base_color);
+    }
 
-        if(has_edges)
-            add_edges(&base_color);
-        if(has_points)
-            add_points(&base_color);
+    void add_points(Color* in_color = &base_color) override
+    {
+        has_points = true;
 
+        int v_count = vertices.size() / 3;
+
+
+        for (int i = 0; i < v_count; i++)
+            info_points.push_back(IndicesInfo (i, 1, GL_POINTS, NO_EBO, in_color));
+    }
+
+    void add_edges(Color* in_color = &base_color) override
+    {
+        has_edges = true;
+
+        int s_indice = indices.size();
+        std::cout << "S_INDICE: " << s_indice << "\n";
+        // Front
+        indices.push_back(0); indices.push_back(1);
+        indices.push_back(1); indices.push_back(2);
+        indices.push_back(2); indices.push_back(3);
+        indices.push_back(3); indices.push_back(0);
+
+        // Back
+        indices.push_back(4); indices.push_back(5);
+        indices.push_back(5); indices.push_back(6);
+        indices.push_back(6); indices.push_back(7);
+        indices.push_back(7); indices.push_back(4);
+
+        // Right
+        indices.push_back(1); indices.push_back(5);
+        indices.push_back(2); indices.push_back(6);
+
+        // Left
+        indices.push_back(0); indices.push_back(4);
+        indices.push_back(3); indices.push_back(7);
+
+        for (int i = 0; i < 12; i++)
+            info_edges.push_back(IndicesInfo (s_indice + (2 * i), 2, GL_LINES, YES_EBO, in_color));
     }
 private:
     float size;
@@ -487,14 +521,14 @@ private:
         //    4   5
         //  0   1
 
-        vertices.push_back(c_x - s); vertices.push_back(c_y - s); vertices.push_back(c_z + s); // 0 FL
-        vertices.push_back(c_x + s); vertices.push_back(c_y - s); vertices.push_back(c_z + s); // 1 FR
-        vertices.push_back(c_x + s); vertices.push_back(c_y + s); vertices.push_back(c_z + s); // 2 TR
-        vertices.push_back(c_x - s); vertices.push_back(c_y + s); vertices.push_back(c_z + s); // 3 TL
-        vertices.push_back(c_x - s); vertices.push_back(c_y - s); vertices.push_back(c_z - s); // 4 BL
-        vertices.push_back(c_x + s); vertices.push_back(c_y - s); vertices.push_back(c_z - s); // 5 BR
-        vertices.push_back(c_x + s); vertices.push_back(c_y + s); vertices.push_back(c_z - s); // 6 TR back
-        vertices.push_back(c_x - s); vertices.push_back(c_y + s); vertices.push_back(c_z - s); // 7 TL back
+        vertices.push_back(center.x - s); vertices.push_back(center.y - s); vertices.push_back(center.z + s); // 0 FL
+        vertices.push_back(center.x + s); vertices.push_back(center.y - s); vertices.push_back(center.z + s); // 1 FR
+        vertices.push_back(center.x + s); vertices.push_back(center.y + s); vertices.push_back(center.z + s); // 2 TR
+        vertices.push_back(center.x - s); vertices.push_back(center.y + s); vertices.push_back(center.z + s); // 3 TL
+        vertices.push_back(center.x - s); vertices.push_back(center.y - s); vertices.push_back(center.z - s); // 4 BL
+        vertices.push_back(center.x + s); vertices.push_back(center.y - s); vertices.push_back(center.z - s); // 5 BR
+        vertices.push_back(center.x + s); vertices.push_back(center.y + s); vertices.push_back(center.z - s); // 6 TR back
+        vertices.push_back(center.x - s); vertices.push_back(center.y + s); vertices.push_back(center.z - s); // 7 TL back
 
         // Front
         indices.push_back(0); indices.push_back(1); indices.push_back(2);
@@ -526,43 +560,6 @@ private:
 		indices.push_back(4); indices.push_back(1); indices.push_back(0);
         info_faces.push_back(IndicesInfo(30, 6, GL_TRIANGLES, YES_EBO, in_color));
     }
-
-    void add_points(Color* in_color) override
-    {
-        int v_count = vertices.size() / 3;
-
-
-        for (int i = 0; i < v_count; i++)
-            info_points.push_back(IndicesInfo (i, 1, GL_POINTS, NO_EBO, in_color));
-    }
-
-    void add_edges(Color* in_color) override
-    {
-        int s_indice = indices.size();
-        std::cout << "S_INDICE: " << s_indice << "\n";
-        // Front
-        indices.push_back(0); indices.push_back(1);
-        indices.push_back(1); indices.push_back(2);
-        indices.push_back(2); indices.push_back(3);
-        indices.push_back(3); indices.push_back(0);
-
-        // Back
-        indices.push_back(4); indices.push_back(5);
-        indices.push_back(5); indices.push_back(6);
-        indices.push_back(6); indices.push_back(7);
-        indices.push_back(7); indices.push_back(4);
-
-        // Right
-        indices.push_back(1); indices.push_back(5);
-        indices.push_back(2); indices.push_back(6);
-
-        // Left
-        indices.push_back(0); indices.push_back(4);
-        indices.push_back(3); indices.push_back(7);
-
-        for (int i = 0; i < 12; i++)
-            info_edges.push_back(IndicesInfo (s_indice + (2 * i), 2, GL_LINES, YES_EBO, in_color));
-    }
 };
 
 class Cone : public Shape
@@ -570,24 +567,22 @@ class Cone : public Shape
 public:
     Cone(const unsigned int& in_points,
          const float& in_height,
-         const float& in_radius = 1.0f,
-         const float& in_cx = 0.0f,
-         const float& in_cy = 0.0f,
-         const float& in_cz = 0.0f,
-         const bool& in_has_faces = false,
-         const bool& in_has_edges = false,
-         const bool& in_has_points = false):
-        Shape(in_cx, in_cy, in_cz,
-              in_has_faces,
-              in_has_edges,
-              in_has_points), height(in_height), radius(in_radius), points(in_points)
+         const float& in_radius = 1.0f):
+        Shape(), height(in_height), radius(in_radius), points(in_points)
     {
         create_cone(&base_color);
+    }
 
-        if (has_edges)
-            add_edges(&base_color);
-        if (has_points)
-            add_points(&base_color);
+    void add_edges(Color* in_color = &base_color) override
+    {
+        has_edges = true;
+        info_edges.push_back(IndicesInfo(1, points, GL_LINE_LOOP, NO_EBO, in_color));
+    }
+
+    void add_points(Color* in_color = &base_color) override
+    {
+        has_points = true;
+        info_points.push_back(IndicesInfo(0, 1, GL_POINTS, NO_EBO, in_color));
     }
 private:
     float height, radius;
@@ -598,20 +593,22 @@ private:
         float h = height / 2.0f;
         float step = 360.0f / float(points);
 
-        // Apex
-        vertices.push_back(c_x); vertices.push_back(c_y + h); vertices.push_back(c_z);
+        // Top
+        vertices.push_back(center.x);
+        vertices.push_back(center.y + h);
+        vertices.push_back(center.z);
 
         // Base
         for (int i = 0; i <= points; i++)
         {
             float ang = utils::ang_to_rad(i * step);
-            float x = c_x + radius * std::cos(ang);
-            float z = c_z + radius * std::sin(ang);
-            vertices.push_back(x); vertices.push_back(c_y - h); vertices.push_back(z);
+            float x = center.x + radius * std::cos(ang);
+            float z = center.z + radius * std::sin(ang);
+            vertices.push_back(x); vertices.push_back(center.y - h); vertices.push_back(z);
         }
 
         // Base center
-        vertices.push_back(c_x); vertices.push_back(c_y - h); vertices.push_back(c_z);
+        vertices.push_back(center.x); vertices.push_back(center.y - h); vertices.push_back(center.z);
         unsigned int center = points + 2;
 
         
@@ -634,30 +631,14 @@ private:
         }
         info_faces.push_back(IndicesInfo(base_start, points * 3, GL_TRIANGLES, YES_EBO, in_color));
     }
-
-    void add_edges(Color* in_color) override
-    {
-        info_edges.push_back(IndicesInfo(1, points, GL_LINE_LOOP, NO_EBO, in_color));
-    }
-
-    void add_points(Color* in_color) override
-    {
-        info_points.push_back(IndicesInfo(0, 1, GL_POINTS, NO_EBO, in_color));
-    }
-
 };
 
 class Sphere : public Shape
 {
 public:
     Sphere(const unsigned int& in_points,
-           const float& in_radius = 1.0f,
-           const float& in_cx = 0.0f,
-           const float& in_cy = 0.0f,
-           const float& in_cz = 0.0f,
-           const bool& in_has_faces = false):
-        Shape(in_cx, in_cy, in_cz,
-              in_has_faces), points(in_points), radius(in_radius)
+           const float& in_radius = 1.0f):
+        Shape(), points(in_points), radius(in_radius)
     {
         create_sphere(&base_color);
     }
@@ -687,35 +668,36 @@ private:
                 float y = (radius * cos_stack) * sin_sector;
                 float z = radius * sin_stack;
 
-                vertices.push_back(x + c_x);
-                vertices.push_back(y + c_y);
-                vertices.push_back(z + c_z);
+                vertices.push_back(x + center.x);
+                vertices.push_back(y + center.y);
+                vertices.push_back(z + center.z);
             }
         }
 
         // Face info
         for (unsigned int i = 0; i < points; i++)
         {
+            unsigned int k1 = i * (points + 1);
+            unsigned int k2 = (i + 1) * (points + 1);
+
             for (unsigned int j = 0; j < points; j++)
             {
-                unsigned int tl = i * (points + 1) + j;
-                unsigned int tr = i * (points + 1) + j + 1;
-                unsigned int bl = (i + 1) * (points + 1) + j;
-                unsigned int br = (i + 1) * (points + 1) + j + 1;
-
-                indices.push_back(tl); indices.push_back(bl); indices.push_back(tr);
-                indices.push_back(tr); indices.push_back(bl); indices.push_back(br);
+               
+               indices.push_back(k1 + j); indices.push_back(k2 + j); indices.push_back(k1 + 1 + j);
+               indices.push_back(k1 + 1 + j); indices.push_back(k2 + j); indices.push_back(k2 + 1 + j);
+               
             }
         }
 
         int section_num = 8;
-        int total_size = points * points;
+        //std::cout << "Indices size : " << indices.size() << " Vertices size: " << vertices.size() << "\n";
+        int total_size = indices.size() / 3; 
         int batch_size = total_size / section_num;
 
         for (int i = 0; i < section_num - 1; i++)
-            info_faces.push_back(IndicesInfo(i * batch_size * 6, batch_size * 6, GL_TRIANGLES, YES_EBO, in_color));
+            info_faces.push_back(IndicesInfo(i * batch_size * 3, batch_size * 3, GL_TRIANGLES, YES_EBO, in_color));
 
-        info_faces.push_back(IndicesInfo((section_num - 1) * batch_size * 6, (total_size - ((section_num - 1) * batch_size)) * 6, GL_TRIANGLES, YES_EBO, in_color));
+        info_faces.push_back(IndicesInfo((section_num - 1) * batch_size * 3, (total_size - ((section_num - 1) * batch_size)) * 3, GL_TRIANGLES, YES_EBO, in_color));
     }
 };
 

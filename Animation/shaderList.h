@@ -79,11 +79,16 @@ public:
         glUniform3f(uniform, x, y, z);
     }
 
-    void set_mat4(const std::string& shader_name, const std::string& uniform_name, Matrix_4& in_matrix)
+    void set_mat4(const std::string& shader_name, const std::string& uniform_name, const Matrix_4& in_matrix)
     {
         unsigned int current_program = shader_programs[shader_name];
         int uniform = glGetUniformLocation(current_program, uniform_name.c_str());
         glUniformMatrix4fv(uniform, 1, GL_TRUE, in_matrix.matrix.data());
+    }
+
+    unsigned int get_cur_prog(const std::string& shader_name)
+    {
+        return shader_programs[shader_name];
     }
 
     void set_float(const std::string& shader_name, const std::string& uniform_name, float val)
@@ -93,7 +98,6 @@ public:
 
         glUniform1f(uniform, val);
     }
-
 
 private:
     unsigned int VERTEX;
